@@ -1,48 +1,103 @@
 import {
     BrowserRouter,
     Routes,
-    Route
+    Route,
+    Navigate
 } from "react-router-dom";
 
 import { AuthProvider } from "./context/AuthContext";
 
-import Home from "./pages/Home";
+// ============================================================
+// PUBLIC PAGES
+// ============================================================
+
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
+
+// ============================================================
+// FARMER PAGES
+// ============================================================
+
 import FarmerDashboard from "./pages/farmer/FarmerDashboard";
 import Profile from "./pages/farmer/Profile";
 import Crops from "./pages/farmer/Crops";
 import AddCrop from "./pages/farmer/AddCrop";
-import ProtectedRoute from "./components/ProtectedRoute";
 import EditCrop from "./pages/farmer/EditCrop";
+
 import MandiFinder from "./pages/farmer/MandiFinder";
+import SavedMandi from "./pages/farmer/SavedMandi";
 import MarketPrices from "./pages/farmer/MarketPrices";
+import Weather from "./pages/farmer/Weather";
+
+// ============================================================
+// PROTECTED ROUTE
+// ============================================================
+
+import ProtectedRoute from "./components/ProtectedRoute";
+
+
+// ============================================================
+// APP
+// ============================================================
 
 function App() {
+
     return (
+
         <BrowserRouter>
+
             <AuthProvider>
+
                 <Routes>
-                    {/* Public Pages */}
+
+                    {/* =================================================
+                        ROOT
+                        Do NOT load Home.jsx for now.
+                        Go to Login.
+                    ================================================= */}
+
                     <Route
                         path="/"
-                        element={<Home />}
-                    />
-                    <Route
-                        path="/login"
-                        element={<Login />}
-                    />
-                    <Route
-                        path="/register"
-                        element={<Register />}
-                    />
-                    <Route
-                        path="/forgot-password"
-                        element={<ForgotPassword />}
+                        element={
+                            <Navigate
+                                to="/login"
+                                replace
+                            />
+                        }
                     />
 
-                    {/* Farmer Dashboard & Profile */}
+
+                    {/* =================================================
+                        PUBLIC ROUTES
+                    ================================================= */}
+
+                    <Route
+                        path="/login"
+                        element={
+                            <Login />
+                        }
+                    />
+
+                    <Route
+                        path="/register"
+                        element={
+                            <Register />
+                        }
+                    />
+
+                    <Route
+                        path="/forgot-password"
+                        element={
+                            <ForgotPassword />
+                        }
+                    />
+
+
+                    {/* =================================================
+                        FARMER DASHBOARD
+                    ================================================= */}
+
                     <Route
                         path="/farmer/dashboard"
                         element={
@@ -51,6 +106,12 @@ function App() {
                             </ProtectedRoute>
                         }
                     />
+
+
+                    {/* =================================================
+                        FARMER PROFILE
+                    ================================================= */}
+
                     <Route
                         path="/farmer/profile"
                         element={
@@ -60,7 +121,11 @@ function App() {
                         }
                     />
 
-                    {/* Farmer Crops */}
+
+                    {/* =================================================
+                        MY CROPS
+                    ================================================= */}
+
                     <Route
                         path="/farmer/crops"
                         element={
@@ -69,6 +134,12 @@ function App() {
                             </ProtectedRoute>
                         }
                     />
+
+
+                    {/* =================================================
+                        ADD CROP
+                    ================================================= */}
+
                     <Route
                         path="/farmer/crops/add"
                         element={
@@ -77,6 +148,12 @@ function App() {
                             </ProtectedRoute>
                         }
                     />
+
+
+                    {/* =================================================
+                        EDIT CROP
+                    ================================================= */}
+
                     <Route
                         path="/farmer/crops/edit/:id"
                         element={
@@ -85,6 +162,12 @@ function App() {
                             </ProtectedRoute>
                         }
                     />
+
+
+                    {/* =================================================
+                        MANDI FINDER
+                    ================================================= */}
+
                     <Route
                         path="/farmer/mandi"
                         element={
@@ -93,18 +176,73 @@ function App() {
                             </ProtectedRoute>
                         }
                     />
+
+
+                    {/* =================================================
+                        SAVED MANDIS
+                    ================================================= */}
+
+                    <Route
+                        path="/farmer/saved-mandis"
+                        element={
+                            <ProtectedRoute role="farmer">
+                                <SavedMandi />
+                            </ProtectedRoute>
+                        }
+                    />
+
+
+                    {/* =================================================
+                        MARKET PRICES
+                    ================================================= */}
+
                     <Route
                         path="/farmer/market-prices"
                         element={
                             <ProtectedRoute role="farmer">
-                                    <MarketPrices />
+                                <MarketPrices />
                             </ProtectedRoute>
-                        } 
+                        }
                     />
+
+
+                    {/* =================================================
+                        WEATHER
+                    ================================================= */}
+
+                    <Route
+                        path="/farmer/weather"
+                        element={
+                            <ProtectedRoute role="farmer">
+                                <Weather />
+                            </ProtectedRoute>
+                        }
+                    />
+
+
+                    {/* =================================================
+                        UNKNOWN URL
+                    ================================================= */}
+
+                    <Route
+                        path="*"
+                        element={
+                            <Navigate
+                                to="/login"
+                                replace
+                            />
+                        }
+                    />
+
                 </Routes>
+
             </AuthProvider>
+
         </BrowserRouter>
+
     );
+
 }
+
 
 export default App;

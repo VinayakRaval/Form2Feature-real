@@ -1,9 +1,12 @@
-import { useNavigate } from "react-router-dom";
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+// ============================================================
+// NAVBAR
+// ============================================================
 
 function Navbar() {
-
     const navigate = useNavigate();
 
     const {
@@ -11,54 +14,101 @@ function Navbar() {
         logout
     } = useAuth();
 
+    // ========================================================
+    // USER NAME
+    // ========================================================
 
-    // ==========================================
+    const userName =
+        user?.full_name ||
+        user?.name ||
+        user?.username ||
+        "Farmer";
+
+    // ========================================================
     // LOGOUT
-    // ==========================================
+    // ========================================================
 
     const handleLogout = () => {
-
         logout();
 
-        navigate("/login");
-
+        navigate("/login", {
+            replace: true
+        });
     };
 
+    // ========================================================
+    // SKIP TO CONTENT
+    // ========================================================
+
+    const handleSkipToContent = () => {
+        const element =
+            document.getElementById(
+                "main-content"
+            );
+
+        if (element) {
+            element.focus();
+            element.scrollIntoView({
+                behavior: "smooth"
+            });
+        }
+    };
+
+    // ========================================================
+    // NAVIGATION ITEM
+    // ========================================================
+
+    const navClass =
+        "hover:text-[#ff6500] transition font-medium whitespace-nowrap";
+
+    // ========================================================
+    // COMPONENT
+    // ========================================================
 
     return (
         <>
-
-
-            {/* =====================================
-                TOP BAR
-            ====================================== */}
+            {/* ==================================================
+                TOP BLACK BAR
+            ================================================== */}
 
             <div className="bg-[#030712] text-white">
 
-                <div className="max-w-7xl mx-auto px-6 py-2 flex items-center justify-between text-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center justify-between text-sm">
 
-                    <div className="flex gap-6">
+                    {/* LEFT */}
 
-                        <span>
+                    <div className="flex items-center gap-4 sm:gap-6">
+
+                        <button
+                            type="button"
+                            onClick={
+                                handleSkipToContent
+                            }
+                            className="hover:text-gray-300 transition"
+                        >
                             Skip to main content
-                        </span>
+                        </button>
 
                         <span>
                             English
                         </span>
 
-                        <span>
+                        {/* Contact is displayed but does not
+                            navigate to an undefined route */}
+
+                        <span className="hidden sm:inline">
                             Contact us
                         </span>
 
-                        <span>
+                        <span className="hidden sm:inline">
                             Help
                         </span>
 
                     </div>
 
+                    {/* RIGHT */}
 
-                    <span>
+                    <span className="hidden md:block">
                         Smart Agriculture Platform
                     </span>
 
@@ -67,164 +117,212 @@ function Navbar() {
             </div>
 
 
-            {/* =====================================
+            {/* ==================================================
                 MAIN NAVBAR
-            ====================================== */}
+            ================================================== */}
 
             <nav className="bg-white border-b border-gray-300 shadow-sm">
 
-                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+
+                    <div className="flex items-center justify-between gap-5">
 
 
-                    {/* =================================
-                        LOGO
-                    ================================== */}
+                        {/* ==================================================
+                            LOGO
+                        ================================================== */}
 
-                    <div
-                        onClick={() =>
-                            navigate("/farmer/dashboard")
-                        }
-                        className="text-2xl font-bold text-[#ff6500] cursor-pointer"
-                    >
-                        Form2Feature
-                    </div>
-
-
-                    {/* =================================
-                        NAVIGATION
-                    ================================== */}
-
-                    <div className="hidden lg:flex items-center gap-5 text-[#111827]">
-
-
-                        {/* DASHBOARD */}
-
-                        <button
-                            onClick={() =>
-                                navigate("/farmer/dashboard")
-                            }
-                            className="hover:text-[#ff6500] transition font-medium"
+                        <Link
+                            to="/farmer/dashboard"
+                            className="text-2xl font-bold text-[#ff6500] whitespace-nowrap hover:text-[#e85b00] transition"
                         >
-                            Dashboard
-                        </button>
+                            Form2Feature
+                        </Link>
 
 
-                        {/* PROFILE */}
+                        {/* ==================================================
+                            DESKTOP NAVIGATION
+                        ================================================== */}
 
-                        <button
-                            onClick={() =>
-                                navigate("/farmer/profile")
-                            }
-                            className="hover:text-[#ff6500] transition font-medium"
-                        >
-                            Profile
-                        </button>
+                        <div className="hidden xl:flex items-center gap-5 text-[#111827]">
 
+                            {/* DASHBOARD */}
 
-                        {/* MY CROPS */}
-
-                        <button
-                            onClick={() =>
-                                navigate("/farmer/crops")
-                            }
-                            className="hover:text-[#ff6500] transition font-medium"
-                        >
-                            My Crops
-                        </button>
+                            <Link
+                                to="/farmer/dashboard"
+                                className={navClass}
+                            >
+                                Dashboard
+                            </Link>
 
 
-                        {/* ADD CROP */}
+                            {/* PROFILE */}
 
-                        <button
-                            onClick={() =>
-                                navigate("/farmer/crops/add")
-                            }
-                            className="bg-[#fff4ed] text-[#ff6500] border border-[#ff6500] px-4 py-2 rounded-lg font-semibold hover:bg-[#ff6500] hover:text-white transition"
-                        >
-                            + Add Crop
-                        </button>
+                            <Link
+                                to="/farmer/profile"
+                                className={navClass}
+                            >
+                                Profile
+                            </Link>
 
 
-                        {/* MANDI */}
+                            {/* MY CROPS */}
 
-                        <button
-                            onClick={() =>
-                                navigate("/farmer/mandi")
-                            }
-                            className="hover:text-[#ff6500] transition font-medium"
-                        >
-                            Mandi Finder
-                        </button>
+                            <Link
+                                to="/farmer/crops"
+                                className={navClass}
+                            >
+                                My Crops
+                            </Link>
 
 
-                        {/* MARKET PRICES */}
+                            {/* ADD CROP */}
 
-                        {/* MARKET PRICES */}
-
-                        <button
-                            onClick={() =>
-                                 navigate("/farmer/market-prices")
-                          }
-                          className="hover:text-[#ff6500] transition font-medium"
-                        >
-                              Market Prices
-                        </button>
+                            <Link
+                                to="/farmer/crops/add"
+                                className="bg-[#fff4ed] text-[#ff6500] border border-[#ff6500] px-4 py-2 rounded-lg font-semibold hover:bg-[#ff6500] hover:text-white transition whitespace-nowrap"
+                            >
+                                + Add Crop
+                            </Link>
 
 
-                        {/* WEATHER */}
+                            {/* MANDI FINDER */}
 
-                        <button
-                            onClick={() =>
-                                navigate("/farmer/weather")
-                            }
-                            className="hover:text-[#ff6500] transition font-medium"
-                        >
-                            Weather
-                        </button>
-
-                    </div>
+                            <Link
+                                to="/farmer/mandi"
+                                className={navClass}
+                            >
+                                Mandi Finder
+                            </Link>
 
 
-                    {/* =================================
-                        RIGHT SIDE
-                    ================================== */}
+                            {/* SAVED MANDIS */}
 
-                    <div className="flex items-center gap-4">
+                            <Link
+                                to="/farmer/saved-mandis"
+                                className={navClass}
+                            >
+                                ⭐ Saved Mandis
+                            </Link>
 
 
-                        {/* USER */}
+                            {/* MARKET PRICES */}
 
-                        <div className="hidden md:block text-right">
-
-                            <p className="text-sm font-semibold text-[#111827]">
-                                {user?.full_name || "Farmer"}
-                            </p>
-
-                            <p className="text-xs text-gray-500">
-                                Farmer
-                            </p>
+                            <Link
+                                to="/farmer/market-prices"
+                                className={navClass}
+                            >
+                                Market Prices
+                            </Link>
 
                         </div>
 
 
-                        {/* LOGOUT */}
+                        {/* ==================================================
+                            RIGHT SIDE
+                        ================================================== */}
 
-                        <button
-                            onClick={handleLogout}
-                            className="bg-[#ff6500] hover:bg-[#e85b00] text-white px-5 py-2 rounded-lg font-semibold transition"
-                        >
-                            Sign out
-                        </button>
+                        <div className="flex items-center gap-3">
+
+
+                            {/* USER */}
+
+                            <div className="hidden sm:block text-right">
+
+                                <p className="text-sm font-semibold text-[#111827]">
+                                    {userName}
+                                </p>
+
+                                <p className="text-xs text-gray-500">
+                                    Farmer
+                                </p>
+
+                            </div>
+
+
+                            {/* LOGOUT */}
+
+                            <button
+                                type="button"
+                                onClick={
+                                    handleLogout
+                                }
+                                className="bg-[#ff6500] hover:bg-[#e85b00] active:bg-[#d94f00] text-white px-4 sm:px-5 py-2 rounded-lg font-semibold transition whitespace-nowrap"
+                            >
+                                Sign out
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    {/* ==================================================
+                        MOBILE NAVIGATION
+                    ================================================== */}
+
+                    <div className="xl:hidden mt-4 pt-4 border-t border-gray-200">
+
+                        <div className="flex flex-wrap gap-2">
+
+                            <Link
+                                to="/farmer/dashboard"
+                                className="px-3 py-2 rounded-lg bg-gray-50 hover:bg-orange-50 hover:text-[#ff6500] text-sm font-medium transition"
+                            >
+                                Dashboard
+                            </Link>
+
+                            <Link
+                                to="/farmer/profile"
+                                className="px-3 py-2 rounded-lg bg-gray-50 hover:bg-orange-50 hover:text-[#ff6500] text-sm font-medium transition"
+                            >
+                                Profile
+                            </Link>
+
+                            <Link
+                                to="/farmer/crops"
+                                className="px-3 py-2 rounded-lg bg-gray-50 hover:bg-orange-50 hover:text-[#ff6500] text-sm font-medium transition"
+                            >
+                                My Crops
+                            </Link>
+
+                            <Link
+                                to="/farmer/crops/add"
+                                className="px-3 py-2 rounded-lg bg-orange-50 text-[#ff6500] border border-orange-200 text-sm font-semibold transition"
+                            >
+                                + Add Crop
+                            </Link>
+
+                            <Link
+                                to="/farmer/mandi"
+                                className="px-3 py-2 rounded-lg bg-gray-50 hover:bg-orange-50 hover:text-[#ff6500] text-sm font-medium transition"
+                            >
+                                🏪 Mandi Finder
+                            </Link>
+
+                            <Link
+                                to="/farmer/saved-mandis"
+                                className="px-3 py-2 rounded-lg bg-gray-50 hover:bg-orange-50 hover:text-[#ff6500] text-sm font-medium transition"
+                            >
+                                ⭐ Saved Mandis
+                            </Link>
+
+                            <Link
+                                to="/farmer/market-prices"
+                                className="px-3 py-2 rounded-lg bg-gray-50 hover:bg-orange-50 hover:text-[#ff6500] text-sm font-medium transition"
+                            >
+                                💰 Market Prices
+                            </Link>
+
+                        </div>
 
                     </div>
 
                 </div>
 
             </nav>
-
         </>
     );
 }
-
 
 export default Navbar;

@@ -8,15 +8,15 @@ const authorizeRoles =
 
 const {
     getMandis,
-    getNearbyMandis
+    getNearbyMandis,
+    searchMandisByLocation
 } = require("../controllers/mandiController");
 
 const router = express.Router();
 
-
-// ==========================================
-// GET ALL MANDIS
-// ==========================================
+// ============================================================
+// ALL MYSQL MANDIS
+// ============================================================
 
 router.get(
     "/",
@@ -25,10 +25,21 @@ router.get(
     getMandis
 );
 
+// ============================================================
+// LOCATION SEARCH
+// IMPORTANT: BEFORE /:ANYTHING ROUTES
+// ============================================================
 
-// ==========================================
-// GET NEARBY REAL MANDIS
-// ==========================================
+router.get(
+    "/search",
+    authenticate,
+    authorizeRoles("farmer"),
+    searchMandisByLocation
+);
+
+// ============================================================
+// GPS + RADIUS
+// ============================================================
 
 router.get(
     "/nearby",
@@ -36,6 +47,5 @@ router.get(
     authorizeRoles("farmer"),
     getNearbyMandis
 );
-
 
 module.exports = router;

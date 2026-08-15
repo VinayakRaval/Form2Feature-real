@@ -1,244 +1,624 @@
-const { pool } = require("../config/db");
+const { pool } =
+    require("../config/db");
 
-// ==========================================
-// GET MARKET PRICES
-// ==========================================
+const {
+    getGovernmentMarketPrices
+} =
+    require("../services/governmentMarketPriceService");
 
-const getMarketPrices = async (req, res) => {
 
-    try {
+// ============================================================
+// NORMALIZE
+// ============================================================
 
-        const {
+function normalize(value) {
+
+    return String(value || "")
+        .trim()
+        .toLowerCase();
+
+}
+
+
+// ============================================================
+// GET MYSQL PRICES
+// ============================================================
+
+async function getLocalPrices({
+    crop = "",
+    state = "",
+    district = ""
+}) {
+
+    let sql = `
+        SELECT
+            id,
+            mandi_id,
             crop_name,
+            variety,
+            grade,
+            market,
             district,
-            state
-        } = req.query;
+            state,
+            min_price,
+            max_price,
+            modal_price,
+            price_unit,
+            price_date
+        FROM market_prices
+        WHERE 1 = 1
+    `;
 
-        let query = `
-            SELECT
-                mp.id,
-                mp.mandi_id,
-                mp.crop_name,
 
-                m.name AS mandi_name,
-                m.address,
-                m.district,
-                m.state,
-                m.latitude,
-                m.longitude,
-                m.contact_number,
+    const params = [];
 
-                mp.min_price,
-                mp.max_price,
-                mp.modal_price,
-                mp.price_unit,
-                mp.price_date,
-                mp.created_at
 
-            FROM market_prices mp
+    // ========================================================
+    // CROP
+    // ========================================================
 
-            INNER JOIN mandis m
-                ON mp.mandi_id = m.id
+    if (crop) {
 
-            WHERE 1 = 1
+        sql += `
+            AND LOWER(crop_name) LIKE ?
         `;
 
-        const values = [];
-
-        // ==========================================
-        // CROP FILTER
-        // ==========================================
-
-        if (crop_name) {
-
-            query += `
-                AND LOWER(mp.crop_name)
-                LIKE LOWER(?)
-            `;
-
-            values.push(`%${crop_name}%`);
-        }
-
-        // ==========================================
-        // DISTRICT FILTER
-        // ==========================================
-
-        if (district) {
-
-            query += `
-                AND m.district = ?
-            `;
-
-            values.push(district);
-        }
-
-        // ==========================================
-        // STATE FILTER
-        // ==========================================
-
-        if (state) {
-
-            query += `
-                AND m.state = ?
-            `;
-
-            values.push(state);
-        }
-
-        // ==========================================
-        // SORT
-        // ==========================================
-
-        query += `
-            ORDER BY
-                mp.price_date DESC,
-                mp.modal_price DESC
-        `;
-
-        const [rows] =
-            await pool.execute(
-                query,
-                values
-            );
-
-        res.json({
-
-            success: true,
-
-            count: rows.length,
-
-            prices: rows
-
-        });
-
-    } catch (error) {
-
-        console.error(
-            "Get Market Prices Error:",
-            error
+        params.push(
+            `%${normalize(crop)}%`
         );
 
-        res.status(500).json({
-
-            success: false,
-
-            message:
-                "Failed to fetch market prices"
-
-        });
     }
-};
 
 
-// ==========================================
-// GET BEST MARKET PRICE
-// ==========================================
+    // ========================================================
+    // STATE
+    // ========================================================
 
-const getBestMarketPrice = async (
+    if (state) {
+
+        sql += `
+            AND LOWER(state) LIKE ?
+        `;
+
+        params.push(
+            `%${normalize(state)}%`
+        );
+
+    }
+
+
+    // ========================================================
+    // DISTRICT
+    // ========================================================
+
+    if (district) {
+
+        sql += `
+            AND LOWER(district) LIKE ?
+        `;
+
+        params.push(
+            `%${normalize(district)}%`
+        );
+
+    }
+
+
+    sql += `
+        ORDER BY price_date DESC, modal_price DESC
+    `;
+
+
+    const [rows] =
+        await pool.execute(
+            sql,
+            params
+        );
+
+
+    return rows.map(row => ({
+
+        id:
+            `mysql-${row.id}`,
+
+        mandi_id:
+            row.mandi_id !== null
+                ? String(row.mandi_id)
+                : null,
+
+        mandi_name:
+            row.market ||
+            "Local Market",
+
+        market:
+            row.market ||
+            "Local Market",
+
+        crop_name:
+            row.crop_name,
+
+        variety:
+            row.variety ||
+            "",
+
+        grade:
+            row.grade ||
+            "",
+
+        district:
+            row.district ||
+            "",
+
+        state:
+            row.state ||
+            "",
+
+        min_price:
+            Number(
+                row.min_price || 0
+            ),
+
+        max_price:
+            Number(
+                row.max_price || 0
+            ),
+
+        modal_price:
+            Number(
+                row.modal_price || 0
+            ),
+
+        price_unit:
+            row.price_unit ||
+            "quintal",
+
+        price_date:
+            row.price_date ||
+            null,
+
+        source:
+            "Form2Feature Database"
+
+    }));
+
+}
+
+
+// ============================================================
+// GET COMBINED MARKET PRICES
+// ============================================================
+
+const getMarketPrices = async (
     req,
     res
 ) => {
 
     try {
 
-        const {
-            crop_name
-        } = req.query;
+        const crop =
+            String(
+                req.query.crop || ""
+            ).trim();
 
 
-        if (!crop_name) {
-
-            return res.status(400).json({
-
-                success: false,
-
-                message:
-                    "Crop name is required"
-
-            });
-        }
+        const state =
+            String(
+                req.query.state ||
+                "Karnataka"
+            ).trim();
 
 
-        const [rows] =
-            await pool.execute(
-                `
-                SELECT
-                    mp.id,
-                    mp.mandi_id,
-                    mp.crop_name,
+        const district =
+            String(
+                req.query.district || ""
+            ).trim();
 
-                    m.name AS mandi_name,
-                    m.address,
-                    m.district,
-                    m.state,
-                    m.latitude,
-                    m.longitude,
 
-                    mp.min_price,
-                    mp.max_price,
-                    mp.modal_price,
-                    mp.price_unit,
-                    mp.price_date
-
-                FROM market_prices mp
-
-                INNER JOIN mandis m
-                    ON mp.mandi_id = m.id
-
-                WHERE LOWER(mp.crop_name)
-                    LIKE LOWER(?)
-
-                ORDER BY
-                    mp.modal_price DESC
-
-                LIMIT 1
-                `,
-                [`%${crop_name}%`]
+        const limit =
+            Number(
+                req.query.limit || 100
             );
 
 
-        if (rows.length === 0) {
+        console.log("");
+        console.log(
+            "========================================"
+        );
 
-            return res.status(404).json({
+        console.log(
+            "COMBINED MARKET PRICE SEARCH"
+        );
 
-                success: false,
+        console.log(
+            "Crop:",
+            crop || "ALL"
+        );
 
-                message:
-                    "No market price found"
+        console.log(
+            "State:",
+            state || "ALL"
+        );
 
-            });
+        console.log(
+            "District:",
+            district || "ALL"
+        );
+
+
+        // ====================================================
+        // MYSQL
+        // ====================================================
+
+        let mysqlPrices = [];
+
+
+        try {
+
+            mysqlPrices =
+                await getLocalPrices({
+                    crop,
+                    state,
+                    district
+                });
+
+        } catch (error) {
+
+            console.error(
+                "MYSQL MARKET PRICE ERROR:",
+                error.message
+            );
+
         }
 
 
-        res.json({
+        // ====================================================
+        // GOVERNMENT
+        // ====================================================
 
-            success: true,
+        let governmentPrices = [];
+
+
+        try {
+
+            governmentPrices =
+                await getGovernmentMarketPrices({
+                    crop,
+                    state,
+                    district,
+                    limit
+                });
+
+        } catch (error) {
+
+            console.error(
+                "GOVERNMENT PRICE ERROR:",
+                error.message
+            );
+
+        }
+
+
+        // ====================================================
+        // COMBINE
+        // ====================================================
+
+        const combined = [
+
+            ...mysqlPrices,
+
+            ...governmentPrices
+
+        ];
+
+
+        // ====================================================
+        // REMOVE DUPLICATES
+        // ====================================================
+
+        const unique = [];
+
+        const seen =
+            new Set();
+
+
+        for (const price of combined) {
+
+            const key = [
+
+                normalize(
+                    price.crop_name
+                ),
+
+                normalize(
+                    price.mandi_name
+                ),
+
+                normalize(
+                    price.district
+                ),
+
+                normalize(
+                    price.state
+                ),
+
+                price.price_date,
+
+                Number(
+                    price.modal_price || 0
+                )
+
+            ].join("|");
+
+
+            if (
+                !seen.has(key)
+            ) {
+
+                seen.add(key);
+
+                unique.push(price);
+
+            }
+
+        }
+
+
+        // ====================================================
+        // SORT
+        // Highest modal price first
+        // ====================================================
+
+        unique.sort(
+            (a, b) => {
+
+                return (
+                    Number(
+                        b.modal_price || 0
+                    ) -
+                    Number(
+                        a.modal_price || 0
+                    )
+                );
+
+            }
+        );
+
+
+        // ====================================================
+        // BEST PRICE
+        // ====================================================
+
+        const bestPrice =
+            unique.length > 0
+                ? unique[0]
+                : null;
+
+
+        console.log(
+            "MySQL:",
+            mysqlPrices.length
+        );
+
+        console.log(
+            "Government:",
+            governmentPrices.length
+        );
+
+        console.log(
+            "Combined:",
+            unique.length
+        );
+
+
+        console.log(
+            "========================================"
+        );
+
+
+        return res.json({
+
+            success:
+                true,
+
+            search: {
+
+                crop,
+
+                state,
+
+                district
+
+            },
+
+            mysql_count:
+                mysqlPrices.length,
+
+            government_count:
+                governmentPrices.length,
+
+            count:
+                unique.length,
 
             best_price:
-                rows[0]
+                bestPrice,
+
+            prices:
+                unique
 
         });
+
 
     } catch (error) {
 
         console.error(
-            "Best Market Price Error:",
+            "MARKET PRICE ERROR:",
             error
         );
 
-        res.status(500).json({
 
-            success: false,
+        return res.status(500).json({
+
+            success:
+                false,
 
             message:
-                "Failed to find best market price"
+                "Unable to fetch market prices",
+
+            error:
+                error.message
 
         });
+
     }
+
+};
+
+
+// ============================================================
+// MYSQL ONLY
+// ============================================================
+
+const getLocalMarketPrices = async (
+    req,
+    res
+) => {
+
+    try {
+
+        const prices =
+            await getLocalPrices({
+
+                crop:
+                    req.query.crop || "",
+
+                state:
+                    req.query.state || "",
+
+                district:
+                    req.query.district || ""
+
+            });
+
+
+        return res.json({
+
+            success:
+                true,
+
+            source:
+                "Form2Feature Database",
+
+            count:
+                prices.length,
+
+            prices
+
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "LOCAL PRICE ERROR:",
+            error
+        );
+
+
+        return res.status(500).json({
+
+            success:
+                false,
+
+            message:
+                "Unable to fetch local market prices",
+
+            error:
+                error.message
+
+        });
+
+    }
+
+};
+
+
+// ============================================================
+// GOVERNMENT ONLY
+// ============================================================
+
+const getGovernmentPrices = async (
+    req,
+    res
+) => {
+
+    try {
+
+        const prices =
+            await getGovernmentMarketPrices({
+
+                crop:
+                    req.query.crop || "",
+
+                state:
+                    req.query.state || "Karnataka",
+
+                district:
+                    req.query.district || "",
+
+                limit:
+                    req.query.limit || 100
+
+            });
+
+
+        return res.json({
+
+            success:
+                true,
+
+            source:
+                "Data.gov.in",
+
+            count:
+                prices.length,
+
+            prices
+
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "GOVERNMENT PRICE ERROR:",
+            error
+        );
+
+
+        return res.status(500).json({
+
+            success:
+                false,
+
+            message:
+                "Unable to fetch government market prices",
+
+            error:
+                error.message
+
+        });
+
+    }
+
 };
 
 
 module.exports = {
+
     getMarketPrices,
-    getBestMarketPrice
+
+    getLocalMarketPrices,
+
+    getGovernmentPrices
+
 };

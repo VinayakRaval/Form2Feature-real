@@ -325,3 +325,238 @@ VALUES
     76.9400000,
     '9999999999'
 );
+
+INSERT INTO mandis
+(
+    name,
+    address,
+    district,
+    state,
+    latitude,
+    longitude,
+    contact_number
+)
+VALUES
+(
+    'Agricultural Market',
+    'Address unavailable',
+    '',
+    '',
+    11.9163006,
+    76.9340000,
+    NULL
+),
+(
+    'Agricultural Market',
+    'Address unavailable',
+    '',
+    '',
+    11.9148440,
+    76.9409787,
+    NULL
+),
+(
+    'Bal Mandir',
+    'Address unavailable',
+    'Mysore',
+    'Karnataka',
+    11.9500000,
+    76.9500000,
+    NULL
+),
+(
+    'Gundlupet APMC',
+    'Gundlupet APMC',
+    'Chamarajanagar',
+    'Karnataka',
+    11.8100000,
+    76.6900000,
+    NULL
+),
+(
+    'APMC yard',
+    'APMC yard',
+    '',
+    'Karnataka',
+    11.6000000,
+    76.7000000,
+    NULL
+);
+
+INSERT INTO market_prices
+(
+    mandi_id,
+    crop_name,
+    min_price,
+    max_price,
+    modal_price,
+    price_unit,
+    price_date
+)
+VALUES
+(5, 'Tomato', 1800, 2500, 2200, 'quintal', CURDATE()),
+(6, 'Tomato', 1700, 2600, 2300, 'quintal', CURDATE()),
+(7, 'Tomato', 1900, 2700, 2450, 'quintal', CURDATE()),
+(8, 'Tomato', 2000, 2800, 2500, 'quintal', CURDATE()),
+(9, 'Tomato', 1850, 2550, 2250, 'quintal', CURDATE());
+
+
+INSERT INTO market_prices
+(
+    mandi_id,
+    crop_name,
+    min_price,
+    max_price,
+    modal_price,
+    price_unit,
+    price_date
+)
+VALUES
+(5, 'Onion', 2000, 2800, 2400, 'quintal', CURDATE()),
+(6, 'Onion', 1900, 2700, 2350, 'quintal', CURDATE()),
+(7, 'Onion', 2100, 2900, 2500, 'quintal', CURDATE()),
+(8, 'Onion', 2200, 3000, 2600, 'quintal', CURDATE()),
+(9, 'Onion', 1950, 2750, 2300, 'quintal', CURDATE());
+
+
+
+
+CREATE TABLE IF NOT EXISTS saved_mandis (
+    id INT NOT NULL AUTO_INCREMENT,
+    farmer_id INT NOT NULL,
+
+    mandi_id VARCHAR(100) NOT NULL,
+    name VARCHAR(150) NOT NULL,
+
+    address VARCHAR(255) DEFAULT NULL,
+    district VARCHAR(100) DEFAULT NULL,
+    state VARCHAR(100) DEFAULT NULL,
+
+    pincode VARCHAR(20) DEFAULT NULL,
+    contact_number VARCHAR(30) DEFAULT NULL,
+    website VARCHAR(255) DEFAULT NULL,
+    opening_hours VARCHAR(255) DEFAULT NULL,
+
+    latitude DECIMAL(10,7) DEFAULT NULL,
+    longitude DECIMAL(10,7) DEFAULT NULL,
+
+    distance_km DECIMAL(10,2) DEFAULT NULL,
+
+    source VARCHAR(100) DEFAULT 'Form2Feature Database',
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id),
+
+    UNIQUE KEY unique_farmer_mandi (
+        farmer_id,
+        mandi_id
+    )
+);
+
+
+CREATE TABLE IF NOT EXISTS saved_mandis (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    user_id INT NOT NULL,
+
+    mandi_id VARCHAR(100) NOT NULL,
+
+    name VARCHAR(255) NOT NULL,
+
+    address TEXT NULL,
+
+    district VARCHAR(150) NULL,
+
+    state VARCHAR(150) NULL,
+
+    latitude DECIMAL(10,7) NULL,
+
+    longitude DECIMAL(10,7) NULL,
+
+    distance_km DECIMAL(10,2) NULL,
+
+    contact_number VARCHAR(100) NULL,
+
+    google_maps TEXT NULL,
+
+    source VARCHAR(100) NULL,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY unique_user_mandi (
+        user_id,
+        mandi_id
+    ),
+
+    INDEX idx_saved_user (
+        user_id
+    )
+);
+
+CREATE TABLE IF NOT EXISTS saved_mandis (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    user_id INT NOT NULL,
+
+    mandi_id VARCHAR(100) NOT NULL,
+    mandi_name VARCHAR(255) NOT NULL,
+
+    address VARCHAR(500) DEFAULT NULL,
+    district VARCHAR(150) DEFAULT NULL,
+    state VARCHAR(150) DEFAULT NULL,
+
+    latitude DECIMAL(10, 7) DEFAULT NULL,
+    longitude DECIMAL(10, 7) DEFAULT NULL,
+
+    contact_number VARCHAR(50) DEFAULT NULL,
+
+    google_maps TEXT DEFAULT NULL,
+
+    source VARCHAR(100) DEFAULT NULL,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY unique_saved_mandi (
+        user_id,
+        mandi_id
+    ),
+
+    INDEX idx_saved_mandis_user (
+        user_id
+    )
+);
+
+
+CREATE TABLE IF NOT EXISTS saved_mandis (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    user_id INT NOT NULL,
+
+    mandi_id VARCHAR(255) NOT NULL,
+
+    mandi_name VARCHAR(255) NOT NULL,
+
+    address TEXT NULL,
+
+    district VARCHAR(255) NULL,
+
+    state VARCHAR(255) NULL,
+
+    contact_number VARCHAR(100) NULL,
+
+    latitude DECIMAL(10,7) NULL,
+
+    longitude DECIMAL(10,7) NULL,
+
+    google_maps TEXT NULL,
+
+    source VARCHAR(100) DEFAULT 'Form2Feature Database',
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY unique_user_mandi (user_id, mandi_id)
+);
+
+ALTER TABLE saved_mandis
+MODIFY mandi_id VARCHAR(255) NOT NULL;

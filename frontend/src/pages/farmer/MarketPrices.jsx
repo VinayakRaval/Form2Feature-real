@@ -1,110 +1,119 @@
-import { useEffect, useState } from "react";
+import React, {
+    useEffect,
+    useState
+} from "react";
 
 import {
-    getMarketPrices,
-    getBestMarketPrice
+    getMarketPrices
 } from "../../services/marketPriceService";
 
-import FarmerLayout from "../../layouts/FarmerLayout";
+import Navbar from "../../components/Navbar";
 
 
-const MarketPrices = () => {
+function MarketPrices() {
 
-    const [cropName, setCropName] = useState("Tomato");
+    // ========================================================
+    // STATE
+    // ========================================================
 
-    const [prices, setPrices] = useState([]);
+    const [crop, setCrop] =
+        useState("Onion");
 
-    const [bestPrice, setBestPrice] = useState(null);
+    const [state, setState] =
+        useState("Karnataka");
 
-    const [loading, setLoading] = useState(false);
+    const [district, setDistrict] =
+        useState("");
 
-    const [error, setError] = useState("");
+    const [prices, setPrices] =
+        useState([]);
+
+    const [bestPrice, setBestPrice] =
+        useState(null);
+
+    const [loading, setLoading] =
+        useState(false);
+
+    const [error, setError] =
+        useState("");
+
+    const [searched, setSearched] =
+        useState(false);
 
 
-    // ==========================================
-    // LOAD MARKET PRICES
-    // ==========================================
+    // ========================================================
+    // SEARCH
+    // ========================================================
 
-    const loadPrices = async () => {
+    const searchPrices = async () => {
+
+        if (!crop.trim()) {
+
+            setError(
+                "Please select or enter a crop."
+            );
+
+            return;
+
+        }
+
+
+        setLoading(true);
+
+        setError("");
+
+        setSearched(true);
+
 
         try {
 
-            setLoading(true);
-            setError("");
+            const response =
+                await getMarketPrices({
 
-            // Clear old data while searching
-            setPrices([]);
-            setBestPrice(null);
+                    crop:
+                        crop.trim(),
 
+                    state:
+                        state.trim(),
 
-            // ==========================================
-            // GET ALL PRICES FOR CROP
-            // ==========================================
+                    district:
+                        district.trim(),
 
-            const result =
-                await getMarketPrices(cropName);
+                    limit:
+                        100
+
+                });
 
 
             console.log(
-                "Market Prices Result:",
-                result
+                "MARKET PRICE RESPONSE:",
+                response
             );
 
 
-            if (result?.success) {
+            if (
+                response?.success
+            ) {
 
                 setPrices(
-                    result.prices || []
+                    response.prices || []
+                );
+
+                setBestPrice(
+                    response.best_price ||
+                    null
                 );
 
             } else {
 
                 setPrices([]);
 
-            }
-
-
-            // ==========================================
-            // GET BEST PRICE
-            // ==========================================
-
-            try {
-
-                const best =
-                    await getBestMarketPrice(
-                        cropName
-                    );
-
-
-                console.log(
-                    "Best Market Price:",
-                    best
-                );
-
-
-                if (
-                    best?.success &&
-                    best?.best_price
-                ) {
-
-                    setBestPrice(
-                        best.best_price
-                    );
-
-                } else {
-
-                    setBestPrice(null);
-
-                }
-
-            } catch (bestError) {
-
-                console.error(
-                    "Best price error:",
-                    bestError
-                );
-
                 setBestPrice(null);
+
+                setError(
+                    response?.message ||
+                    "No market prices found."
+                );
 
             }
 
@@ -112,33 +121,19 @@ const MarketPrices = () => {
         } catch (err) {
 
             console.error(
-                "Market price error:",
+                "MARKET PRICE SEARCH ERROR:",
                 err
             );
-
-
-            if (
-                err.response?.status === 401
-            ) {
-
-                setError(
-                    "Your login session has expired. Please login again."
-                );
-
-            } else {
-
-                setError(
-                    err.response?.data?.message ||
-                    "Failed to fetch market prices"
-                );
-
-            }
 
 
             setPrices([]);
 
             setBestPrice(null);
 
+            setError(
+                err?.response?.data?.message ||
+                "Unable to fetch market prices."
+            );
 
         } finally {
 
@@ -149,455 +144,539 @@ const MarketPrices = () => {
     };
 
 
-    // ==========================================
-    // LOAD DEFAULT TOMATO PRICES
-    // ==========================================
+    // ========================================================
+    // INITIAL SEARCH
+    // ========================================================
 
     useEffect(() => {
 
-        loadPrices();
+        searchPrices();
 
     }, []);
 
 
-    // ==========================================
-    // GOOGLE MAPS DIRECTIONS
-    // ==========================================
+    // ========================================================
+    // FORMAT PRICE
+    // ========================================================
 
-    const getDirections = (price) => {
+    const formatPrice =
+        (value) => {
 
-        if (
-            price.latitude == null ||
-            price.longitude == null
-        ) {
+            const number =
+                Number(value || 0);
 
-            return;
+            return number.toLocaleString(
+                "en-IN"
+            );
 
-        }
-
-
-        const url =
-            `https://www.google.com/maps/dir/?api=1` +
-            `&destination=${price.latitude},${price.longitude}` +
-            `&travelmode=driving`;
+        };
 
 
-        window.open(
-            url,
-            "_blank"
-        );
+    // ========================================================
+    // FORMAT DATE
+    // ========================================================
 
-    };
+    const formatDate =
+        (date) => {
+
+            if (!date) {
+
+                return "Date unavailable";
+
+            }
+
+            const parsed =
+                new Date(date);
+
+            if (
+                Number.isNaN(
+                    parsed.getTime()
+                )
+            ) {
+
+                return String(date);
+
+            }
+
+            return parsed.toLocaleDateString(
+                "en-IN",
+                {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric"
+                }
+            );
+
+        };
 
 
-    // ==========================================
+    // ========================================================
     // RENDER
-    // ==========================================
+    // ========================================================
 
     return (
 
-        <FarmerLayout>
+        <div className="min-h-screen bg-[#f5f6f8]">
 
-            <div className="min-h-screen bg-gray-50 p-6">
-
-                <div className="max-w-6xl mx-auto">
+            <Navbar />
 
 
-                    {/* ==================================
-                        HEADER
-                    =================================== */}
-
-                    <div className="mb-6">
-
-                        <h1 className="text-3xl font-bold text-gray-800">
-                            Market Prices
-                        </h1>
-
-                        <p className="text-gray-600 mt-1">
-                            Compare agricultural prices between mandis.
-                        </p>
-
-                    </div>
+            <main className="max-w-7xl mx-auto px-6 py-10">
 
 
-                    {/* ==================================
-                        CROP SEARCH
-                    =================================== */}
+                {/* =================================================
+                    HEADER
+                ================================================= */}
 
-                    <div className="bg-white rounded-xl shadow p-5 mb-6">
+                <div className="mb-8">
 
-                        <label className="block font-semibold mb-2">
-                            Select Crop
-                        </label>
+                    <p className="text-[#ff6500] font-bold uppercase tracking-wide">
+                        Smart Agriculture
+                    </p>
+
+                    <h1 className="text-4xl font-bold text-[#14213d] mt-2">
+                        Market Prices
+                    </h1>
+
+                    <p className="text-gray-600 mt-2">
+                        Compare agricultural prices from
+                        Government data and Form2Feature Database.
+                    </p>
+
+                </div>
 
 
-                        <div className="flex gap-3">
+                {/* =================================================
+                    SEARCH BOX
+                ================================================= */}
+
+                <div className="bg-white rounded-2xl shadow-sm border p-6 mb-8">
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
 
 
-                            {/* CROP SELECT */}
+                        {/* CROP */}
+
+                        <div>
+
+                            <label className="block font-semibold mb-2">
+                                Crop
+                            </label>
 
                             <select
-                                value={cropName}
+                                value={crop}
                                 onChange={(e) =>
-                                    setCropName(
+                                    setCrop(
                                         e.target.value
                                     )
                                 }
-                                className="border border-gray-300 rounded-lg px-4 py-3 flex-1 focus:outline-none focus:ring-2 focus:ring-green-500"
+                                className="w-full border rounded-lg px-4 py-3"
                             >
+
+                                <option value="Onion">
+                                    Onion
+                                </option>
 
                                 <option value="Tomato">
                                     Tomato
                                 </option>
 
-                                <option value="Onion">
-                                    Onion
+                                <option value="Potato">
+                                    Potato
                                 </option>
 
                                 <option value="Maize">
                                     Maize
                                 </option>
 
+                                <option value="Cotton">
+                                    Cotton
+                                </option>
+
+                                <option value="Groundnut">
+                                    Groundnut
+                                </option>
+
                             </select>
 
+                        </div>
 
-                            {/* SEARCH BUTTON */}
+
+                        {/* STATE */}
+
+                        <div>
+
+                            <label className="block font-semibold mb-2">
+                                State
+                            </label>
+
+                            <input
+                                value={state}
+                                onChange={(e) =>
+                                    setState(
+                                        e.target.value
+                                    )
+                                }
+                                placeholder="Karnataka"
+                                className="w-full border rounded-lg px-4 py-3"
+                            />
+
+                        </div>
+
+
+                        {/* DISTRICT */}
+
+                        <div>
+
+                            <label className="block font-semibold mb-2">
+                                District
+                            </label>
+
+                            <input
+                                value={district}
+                                onChange={(e) =>
+                                    setDistrict(
+                                        e.target.value
+                                    )
+                                }
+                                placeholder="Example: Haveri"
+                                className="w-full border rounded-lg px-4 py-3"
+                            />
+
+                        </div>
+
+
+                        {/* SEARCH */}
+
+                        <div className="flex items-end">
 
                             <button
-                                onClick={loadPrices}
+                                onClick={
+                                    searchPrices
+                                }
                                 disabled={loading}
-                                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold transition"
+                                className="w-full bg-[#ff6500] hover:bg-[#e85b00] text-white px-5 py-3 rounded-lg font-bold disabled:opacity-50"
                             >
 
                                 {loading
                                     ? "Searching..."
-                                    : "Search"}
+                                    : "🔍 Search Prices"}
 
                             </button>
-
 
                         </div>
 
                     </div>
 
 
-                    {/* ==================================
-                        LOADING
-                    =================================== */}
-
-                    {loading && (
-
-                        <div className="bg-white rounded-xl shadow p-8 text-center mb-6">
-
-                            <div className="text-4xl mb-3">
-                                📊
-                            </div>
-
-                            <p className="text-gray-600">
-                                Loading market prices...
-                            </p>
-
-                        </div>
-
-                    )}
-
-
-                    {/* ==================================
-                        ERROR
-                    =================================== */}
-
-                    {!loading && error && (
-
-                        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-5 mb-6">
-
-                            <p className="font-medium">
-                                {error}
-                            </p>
-
-                        </div>
-
-                    )}
-
-
-                    {/* ==================================
-                        BEST MARKET PRICE
-                    =================================== */}
-
-                    {!loading &&
-                        bestPrice && (
-
-                            <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
-
-                                <p className="text-green-700 font-semibold">
-                                    ⭐ Best Market Price
-                                </p>
-
-
-                                <h2 className="text-2xl font-bold text-gray-800 mt-1">
-                                    {bestPrice.mandi_name}
-                                </h2>
-
-
-                                <p className="text-3xl font-bold text-green-600 mt-2">
-
-                                    ₹
-                                    {Number(
-                                        bestPrice.modal_price || 0
-                                    ).toLocaleString(
-                                        "en-IN"
-                                    )}
-
-                                </p>
-
-
-                                <p className="text-gray-600">
-                                    per{" "}
-                                    {bestPrice.price_unit ||
-                                        "quintal"}
-                                </p>
-
-                            </div>
-
-                        )}
-
-
-                    {/* ==================================
-                        PRICE COMPARISON
-                    =================================== */}
-
-                    {!loading &&
-                        prices.length > 0 && (
-
-                            <>
-
-                                <div className="flex justify-between items-center mb-4">
-
-                                    <h2 className="text-xl font-bold text-gray-800">
-                                        Mandi Price Comparison
-                                    </h2>
-
-
-                                    <span className="text-sm text-gray-500">
-                                        {prices.length} mandi
-                                        {prices.length !== 1
-                                            ? "s"
-                                            : ""}{" "}
-                                        found
-                                    </span>
-
-                                </div>
-
-
-                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-
-
-                                    {prices.map(
-                                        (price) => (
-
-                                            <div
-                                                key={
-                                                    price.id
-                                                }
-                                                className="bg-white rounded-xl shadow p-5 hover:shadow-lg transition"
-                                            >
-
-
-                                                {/* NAME */}
-
-                                                <div className="flex justify-between items-start gap-3">
-
-                                                    <h3 className="text-lg font-bold text-gray-800">
-
-                                                        {price.mandi_name ||
-                                                            "Agricultural Market"}
-
-                                                    </h3>
-
-
-                                                    {/* BEST */}
-
-                                                    {bestPrice &&
-                                                        price.id ===
-                                                            bestPrice.id && (
-
-                                                            <span className="text-green-600 text-sm font-semibold whitespace-nowrap">
-
-                                                                BEST
-
-                                                            </span>
-
-                                                        )}
-
-                                                </div>
-
-
-                                                {/* DISTRICT */}
-
-                                                <p className="text-gray-500 mt-1">
-
-                                                    {price.district ||
-                                                        "District unavailable"}
-
-                                                </p>
-
-
-                                                {/* MODAL PRICE */}
-
-                                                <div className="mt-5">
-
-                                                    <p className="text-2xl font-bold text-green-600">
-
-                                                        ₹
-                                                        {Number(
-                                                            price.modal_price ||
-                                                                0
-                                                        ).toLocaleString(
-                                                            "en-IN"
-                                                        )}
-
-                                                    </p>
-
-
-                                                    <p className="text-gray-500">
-
-                                                        Modal price /{" "}
-
-                                                        {price.price_unit ||
-                                                            "quintal"}
-
-                                                    </p>
-
-                                                </div>
-
-
-                                                {/* MIN/MAX */}
-
-                                                <div className="mt-4 text-sm text-gray-600 space-y-1">
-
-                                                    <p>
-
-                                                        Minimum:
-
-                                                        <strong>
-
-                                                            {" "}
-                                                            ₹
-                                                            {Number(
-                                                                price.min_price ||
-                                                                    0
-                                                            ).toLocaleString(
-                                                                "en-IN"
-                                                            )}
-
-                                                        </strong>
-
-                                                    </p>
-
-
-                                                    <p>
-
-                                                        Maximum:
-
-                                                        <strong>
-
-                                                            {" "}
-                                                            ₹
-                                                            {Number(
-                                                                price.max_price ||
-                                                                    0
-                                                            ).toLocaleString(
-                                                                "en-IN"
-                                                            )}
-
-                                                        </strong>
-
-                                                    </p>
-
-
-                                                    <p className="mt-2">
-
-                                                        Price Date:
-
-                                                        {" "}
-
-                                                        {price.price_date ||
-                                                            "Not available"}
-
-                                                    </p>
-
-                                                </div>
-
-
-                                                {/* GOOGLE MAPS */}
-
-                                                {price.latitude != null &&
-                                                    price.longitude !=
-                                                        null && (
-
-                                                        <button
-                                                            onClick={() =>
-                                                                getDirections(
-                                                                    price
-                                                                )
-                                                            }
-                                                            className="w-full mt-5 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition font-semibold"
-                                                        >
-
-                                                            🗺 Get Directions
-
-                                                        </button>
-
-                                                    )}
-
-                                            </div>
-
-                                        )
-                                    )}
-
-                                </div>
-
-                            </>
-
-                        )}
-
-
-                    {/* ==================================
-                        NO DATA
-                    =================================== */}
-
-                    {!loading &&
-                        !error &&
-                        prices.length === 0 && (
-
-                            <div className="bg-white rounded-xl shadow p-10 text-center">
-
-                                <div className="text-5xl mb-4">
-                                    📊
-                                </div>
-
-
-                                <h2 className="text-xl font-bold text-gray-800">
-                                    No market prices found
-                                </h2>
-
-
-                                <p className="text-gray-500 mt-2">
-                                    Try another crop.
-                                </p>
-
-                            </div>
-
-                        )}
+                    <p className="text-sm text-gray-500 mt-4">
+                        Searches both Government market prices
+                        and your Form2Feature MySQL database.
+                    </p>
 
                 </div>
 
-            </div>
 
-        </FarmerLayout>
+                {/* =================================================
+                    ERROR
+                ================================================= */}
+
+                {error && (
+
+                    <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-6">
+                        {error}
+                    </div>
+
+                )}
+
+
+                {/* =================================================
+                    BEST PRICE
+                ================================================= */}
+
+                {bestPrice && (
+
+                    <div className="bg-white border border-green-200 rounded-2xl p-6 mb-8">
+
+                        <div className="flex items-center gap-2 text-green-700 font-bold mb-3">
+                            🏆 Best Market Price
+                        </div>
+
+
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+
+                            <div>
+
+                                <p className="text-gray-500 text-sm">
+                                    Market
+                                </p>
+
+                                <p className="font-bold text-xl">
+                                    {bestPrice.mandi_name}
+                                </p>
+
+                            </div>
+
+
+                            <div>
+
+                                <p className="text-gray-500 text-sm">
+                                    Modal Price
+                                </p>
+
+                                <p className="font-bold text-2xl text-green-700">
+                                    ₹{formatPrice(
+                                        bestPrice.modal_price
+                                    )}
+                                </p>
+
+                                <p className="text-sm text-gray-500">
+                                    per quintal
+                                </p>
+
+                            </div>
+
+
+                            <div>
+
+                                <p className="text-gray-500 text-sm">
+                                    District
+                                </p>
+
+                                <p className="font-semibold">
+                                    {bestPrice.district ||
+                                        "District unavailable"}
+                                </p>
+
+                            </div>
+
+
+                            <div>
+
+                                <p className="text-gray-500 text-sm">
+                                    Source
+                                </p>
+
+                                <p className="font-semibold">
+                                    {bestPrice.source}
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                )}
+
+
+                {/* =================================================
+                    RESULTS HEADER
+                ================================================= */}
+
+                {searched && (
+
+                    <div className="flex justify-between items-center mb-5">
+
+                        <div>
+
+                            <h2 className="text-2xl font-bold text-[#14213d]">
+                                Market Price Results
+                            </h2>
+
+                            <p className="text-gray-500">
+                                {prices.length} markets found
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                )}
+
+
+                {/* =================================================
+                    PRICE CARDS
+                ================================================= */}
+
+                {prices.length > 0 && (
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                        {prices.map(
+                            (price, index) => (
+
+                                <div
+                                    key={
+                                        price.id ||
+                                        index
+                                    }
+                                    className="bg-white border rounded-2xl shadow-sm p-6 hover:shadow-md transition"
+                                >
+
+                                    {/* HEADER */}
+
+                                    <div className="flex justify-between gap-3">
+
+                                        <div>
+
+                                            <h3 className="text-xl font-bold text-[#14213d]">
+                                                {price.mandi_name ||
+                                                    price.market ||
+                                                    "Market"}
+                                            </h3>
+
+                                            <p className="text-gray-500 mt-1">
+                                                {price.district ||
+                                                    "District unavailable"}
+                                                {price.state
+                                                    ? `, ${price.state}`
+                                                    : ""}
+                                            </p>
+
+                                        </div>
+
+
+                                        {/* SOURCE */}
+
+                                        <span
+                                            className={
+                                                price.source ===
+                                                "Data.gov.in"
+                                                    ? "bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold h-fit whitespace-nowrap"
+                                                    : "bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold h-fit whitespace-nowrap"
+                                            }
+                                        >
+
+                                            {price.source ===
+                                            "Data.gov.in"
+                                                ? "🇮🇳 GOVERNMENT"
+                                                : "🗄️ MYSQL"}
+
+                                        </span>
+
+                                    </div>
+
+
+                                    {/* PRICES */}
+
+                                    <div className="grid grid-cols-3 gap-3 mt-6">
+
+                                        <div className="bg-gray-50 rounded-lg p-3">
+
+                                            <p className="text-xs text-gray-500">
+                                                Minimum
+                                            </p>
+
+                                            <p className="font-bold mt-1">
+                                                ₹{formatPrice(
+                                                    price.min_price
+                                                )}
+                                            </p>
+
+                                        </div>
+
+
+                                        <div className="bg-green-50 rounded-lg p-3">
+
+                                            <p className="text-xs text-gray-500">
+                                                Modal
+                                            </p>
+
+                                            <p className="font-bold text-green-700 mt-1">
+                                                ₹{formatPrice(
+                                                    price.modal_price
+                                                )}
+                                            </p>
+
+                                        </div>
+
+
+                                        <div className="bg-gray-50 rounded-lg p-3">
+
+                                            <p className="text-xs text-gray-500">
+                                                Maximum
+                                            </p>
+
+                                            <p className="font-bold mt-1">
+                                                ₹{formatPrice(
+                                                    price.max_price
+                                                )}
+                                            </p>
+
+                                        </div>
+
+                                    </div>
+
+
+                                    {/* DATE */}
+
+                                    <div className="border-t mt-5 pt-4 text-sm text-gray-500">
+
+                                        📅 Price Date:{" "}
+
+                                        <span className="font-semibold text-gray-700">
+                                            {formatDate(
+                                                price.price_date
+                                            )}
+                                        </span>
+
+                                    </div>
+
+
+                                    {/* SOURCE */}
+
+                                    <div className="mt-2 text-xs text-gray-400">
+
+                                        Source:{" "}
+                                        {price.source}
+
+                                    </div>
+
+                                </div>
+
+                            )
+                        )}
+
+                    </div>
+
+                )}
+
+
+                {/* =================================================
+                    NO RESULTS
+                ================================================= */}
+
+                {!loading &&
+                    searched &&
+                    prices.length === 0 &&
+                    !error && (
+
+                        <div className="bg-white border rounded-2xl p-12 text-center">
+
+                            <div className="text-5xl mb-4">
+                                📊
+                            </div>
+
+                            <h3 className="text-xl font-bold">
+                                No Market Prices Found
+                            </h3>
+
+                            <p className="text-gray-500 mt-2">
+                                Try another crop or district.
+                            </p>
+
+                        </div>
+
+                    )}
+
+            </main>
+
+        </div>
 
     );
 
-};
+}
 
 
 export default MarketPrices;

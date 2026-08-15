@@ -1,4 +1,5 @@
-const express = require("express");
+const express =
+    require("express");
 
 const authenticate =
     require("../middleware/authMiddleware");
@@ -6,15 +7,22 @@ const authenticate =
 const authorizeRoles =
     require("../middleware/roleMiddleware");
 
+
 const {
     getMarketPrices,
-    getBestMarketPrice
-} = require("../controllers/marketPriceController");
+    getLocalMarketPrices,
+    getGovernmentPrices
+} =
+    require("../controllers/marketPriceController");
 
-const router = express.Router();
+
+const router =
+    express.Router();
 
 
-// GET MARKET PRICES
+// ============================================================
+// COMBINED
+// ============================================================
 
 router.get(
     "/",
@@ -24,14 +32,29 @@ router.get(
 );
 
 
-// GET BEST PRICE
+// ============================================================
+// MYSQL ONLY
+// ============================================================
 
 router.get(
-    "/best",
+    "/local",
     authenticate,
     authorizeRoles("farmer"),
-    getBestMarketPrice
+    getLocalMarketPrices
 );
 
 
-module.exports = router;
+// ============================================================
+// GOVERNMENT ONLY
+// ============================================================
+
+router.get(
+    "/government",
+    authenticate,
+    authorizeRoles("farmer"),
+    getGovernmentPrices
+);
+
+
+module.exports =
+    router;
