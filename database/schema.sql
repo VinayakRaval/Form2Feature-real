@@ -560,3 +560,34 @@ CREATE TABLE IF NOT EXISTS saved_mandis (
 
 ALTER TABLE saved_mandis
 MODIFY mandi_id VARCHAR(255) NOT NULL;
+
+
+
+
+CREATE TABLE IF NOT EXISTS profit_calculations (
+    id INT NOT NULL AUTO_INCREMENT,
+    farmer_id INT NOT NULL,
+
+    crop VARCHAR(100) NOT NULL,
+
+    quantity DECIMAL(12,2) NOT NULL DEFAULT 0,
+    selling_price DECIMAL(12,2) NOT NULL DEFAULT 0,
+
+    production_cost DECIMAL(12,2) NOT NULL DEFAULT 0,
+    transport_cost DECIMAL(12,2) NOT NULL DEFAULT 0,
+    other_expenses DECIMAL(12,2) NOT NULL DEFAULT 0,
+
+    expected_revenue DECIMAL(14,2) NOT NULL DEFAULT 0,
+    total_expense DECIMAL(14,2) NOT NULL DEFAULT 0,
+    expected_profit DECIMAL(14,2) NOT NULL DEFAULT 0,
+    profit_percentage DECIMAL(10,2) NOT NULL DEFAULT 0,
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id),
+
+    INDEX idx_profit_farmer (farmer_id),
+    INDEX idx_profit_crop (crop)
+
+) ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4;
