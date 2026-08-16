@@ -250,7 +250,7 @@ function EditCrop() {
         }
 
 
-        return `http://localhost:5000${imagePath}`;
+        return `${window.location.origin}${imagePath}`;
 
     };
 

@@ -31,7 +31,7 @@ function Weather() {
              */
 
             const response = await fetch(
-                `http://localhost:5000/api/weather?location=${encodeURIComponent(
+                `/api/weather?location=${encodeURIComponent(
                     city.trim()
                 )}`
             );
@@ -90,7 +90,7 @@ function Weather() {
                      */
 
                     const response = await fetch(
-                        `http://localhost:5000/api/weather?latitude=${latitude}&longitude=${longitude}`
+                        `/api/weather?latitude=${latitude}&longitude=${longitude}`
                     );
 
                     const data =

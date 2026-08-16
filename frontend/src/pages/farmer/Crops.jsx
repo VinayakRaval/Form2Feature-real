@@ -33,7 +33,7 @@ const getBackendUrl = () => {
 
     // Kubernetes / production
     // Empty string means use the same host.
-    return "";
+    return window.location.origin;
 };
 
 
