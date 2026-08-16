@@ -8,6 +8,38 @@ import {
     deleteCrop
 } from "../../services/cropService";
 
+// ============================================================
+// BACKEND URL
+// ============================================================
+//
+// LOCAL:
+// Frontend: http://localhost:5173
+// Backend:  http://localhost:5000
+//
+// KUBERNETES:
+// Frontend: http://<EC2-IP>:30080
+// Backend is accessed internally through Kubernetes service.
+// ============================================================
+
+const getBackendUrl = () => {
+
+    // Local development
+    if (
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1"
+    ) {
+        return "http://localhost:5000";
+    }
+
+    // Kubernetes / production
+    // Empty string means use the same host.
+    return "";
+};
+
+
+// ============================================================
+// CROPS COMPONENT
+// ============================================================
 
 function Crops() {
 
@@ -20,9 +52,9 @@ function Crops() {
     const [error, setError] = useState("");
 
 
-    // ==========================================
+    // ========================================================
     // LOAD CROPS
-    // ==========================================
+    // ========================================================
 
     const loadCrops = async () => {
 
@@ -32,8 +64,7 @@ function Crops() {
 
             setError("");
 
-            const result =
-                await getMyCrops();
+            const result = await getMyCrops();
 
 
             if (result.success) {
@@ -72,6 +103,10 @@ function Crops() {
     };
 
 
+    // ========================================================
+    // LOAD CROPS ON PAGE LOAD
+    // ========================================================
+
     useEffect(() => {
 
         loadCrops();
@@ -79,9 +114,9 @@ function Crops() {
     }, []);
 
 
-    // ==========================================
+    // ========================================================
     // DELETE CROP
-    // ==========================================
+    // ========================================================
 
     const handleDelete = async (id) => {
 
@@ -136,17 +171,19 @@ function Crops() {
     };
 
 
-    // ==========================================
+    // ========================================================
     // IMAGE URL
-    // ==========================================
+    // ========================================================
 
     const getImageUrl = (image) => {
 
+        // No image
         if (!image) {
             return null;
         }
 
-        // If backend already returns complete URL
+
+        // If backend already returns a complete URL
         if (
             image.startsWith("http://") ||
             image.startsWith("https://")
@@ -154,10 +191,32 @@ function Crops() {
             return image;
         }
 
-        return `http://localhost:5000${image}`;
+
+        // Remove accidental spaces
+        const cleanImage =
+            image.trim();
+
+
+        // Backend URL depending on environment
+        const backendUrl =
+            getBackendUrl();
+
+
+        // Make sure image starts with /
+        const imagePath =
+            cleanImage.startsWith("/")
+                ? cleanImage
+                : `/${cleanImage}`;
+
+
+        return `${backendUrl}${imagePath}`;
 
     };
 
+
+    // ========================================================
+    // PAGE
+    // ========================================================
 
     return (
 
@@ -168,9 +227,9 @@ function Crops() {
                 <div className="max-w-7xl mx-auto">
 
 
-                    {/* ==================================
+                    {/* ==================================================
                         HEADER
-                    =================================== */}
+                    =================================================== */}
 
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
 
@@ -203,22 +262,24 @@ function Crops() {
                     </div>
 
 
-                    {/* ==================================
+                    {/* ==================================================
                         ERROR
-                    =================================== */}
+                    =================================================== */}
 
                     {error && (
 
                         <div className="mb-6 bg-red-50 border border-red-200 text-red-700 rounded-xl p-4">
+
                             {error}
+
                         </div>
 
                     )}
 
 
-                    {/* ==================================
+                    {/* ==================================================
                         LOADING
-                    =================================== */}
+                    =================================================== */}
 
                     {loading ? (
 
@@ -235,9 +296,9 @@ function Crops() {
 
                     ) : crops.length === 0 ? (
 
-                        /* ==================================
-                           EMPTY
-                        =================================== */
+                        /* ==================================================
+                           EMPTY STATE
+                        =================================================== */
 
                         <div className="bg-white rounded-2xl border border-gray-200 text-center py-20">
 
@@ -266,9 +327,9 @@ function Crops() {
 
                     ) : (
 
-                        /* ==================================
+                        /* ==================================================
                            CROP GRID
-                        =================================== */
+                        =================================================== */
 
                         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
@@ -280,7 +341,9 @@ function Crops() {
                                 >
 
 
-                                    {/* IMAGE */}
+                                    {/* ==================================================
+                                        IMAGE
+                                    =================================================== */}
 
                                     <div className="h-56 bg-gray-100">
 
@@ -288,8 +351,11 @@ function Crops() {
 
                                             <img
                                                 src={getImageUrl(crop.image)}
-                                                alt={crop.crop_name}
+                                                alt={crop.crop_name || "Crop"}
                                                 className="w-full h-full object-cover"
+                                                onError={(event) => {
+                                                    event.currentTarget.style.display = "none";
+                                                }}
                                             />
 
                                         ) : (
@@ -311,12 +377,16 @@ function Crops() {
                                     </div>
 
 
-                                    {/* CONTENT */}
+                                    {/* ==================================================
+                                        CONTENT
+                                    =================================================== */}
 
                                     <div className="p-5">
 
 
-                                        {/* NAME + STATUS */}
+                                        {/* ==================================================
+                                            NAME + STATUS
+                                        =================================================== */}
 
                                         <div className="flex items-start justify-between gap-3">
 
@@ -325,6 +395,7 @@ function Crops() {
                                                 <h2 className="text-xl font-bold text-[#111827] capitalize">
                                                     {crop.crop_name}
                                                 </h2>
+
 
                                                 {crop.crop_variety && (
 
@@ -346,16 +417,20 @@ function Crops() {
                                                         : "bg-gray-100 text-gray-700"
                                                 }`}
                                             >
-                                                {crop.status}
+                                                {crop.status || "unknown"}
                                             </span>
 
                                         </div>
 
 
-                                        {/* DETAILS */}
+                                        {/* ==================================================
+                                            DETAILS
+                                        =================================================== */}
 
                                         <div className="mt-5 space-y-3 text-sm">
 
+
+                                            {/* Quantity */}
 
                                             <div className="flex justify-between">
 
@@ -364,12 +439,17 @@ function Crops() {
                                                 </span>
 
                                                 <span className="font-semibold text-gray-900">
-                                                    {crop.quantity}{" "}
-                                                    {crop.quantity_unit}
+
+                                                    {crop.quantity ?? "—"}{" "}
+
+                                                    {crop.quantity_unit || ""}
+
                                                 </span>
 
                                             </div>
 
+
+                                            {/* Quality */}
 
                                             <div className="flex justify-between">
 
@@ -384,6 +464,8 @@ function Crops() {
                                             </div>
 
 
+                                            {/* Expected Price */}
+
                                             <div className="flex justify-between">
 
                                                 <span className="text-gray-500">
@@ -391,16 +473,21 @@ function Crops() {
                                                 </span>
 
                                                 <span className="font-bold text-[#ff6500]">
+
                                                     ₹
+
                                                     {crop.expected_price
                                                         ? Number(
-                                                              crop.expected_price
-                                                          ).toLocaleString("en-IN")
+                                                            crop.expected_price
+                                                        ).toLocaleString("en-IN")
                                                         : "—"}
+
                                                 </span>
 
                                             </div>
 
+
+                                            {/* Harvest Date */}
 
                                             <div className="flex justify-between">
 
@@ -409,21 +496,28 @@ function Crops() {
                                                 </span>
 
                                                 <span className="font-semibold text-gray-900">
+
                                                     {crop.harvest_date
+
                                                         ? new Date(
-                                                              crop.harvest_date
-                                                          ).toLocaleDateString(
-                                                              "en-IN"
-                                                          )
+                                                            crop.harvest_date
+                                                        ).toLocaleDateString(
+                                                            "en-IN"
+                                                        )
+
                                                         : "Not specified"}
+
                                                 </span>
 
                                             </div>
 
+
                                         </div>
 
 
-                                        {/* DESCRIPTION */}
+                                        {/* ==================================================
+                                            DESCRIPTION
+                                        =================================================== */}
 
                                         {crop.description && (
 
@@ -434,10 +528,14 @@ function Crops() {
                                         )}
 
 
-                                        {/* ACTIONS */}
+                                        {/* ==================================================
+                                            ACTIONS
+                                        =================================================== */}
 
                                         <div className="grid grid-cols-2 gap-3 mt-6">
 
+
+                                            {/* EDIT */}
 
                                             <button
                                                 onClick={() =>
@@ -451,6 +549,8 @@ function Crops() {
                                             </button>
 
 
+                                            {/* DELETE */}
+
                                             <button
                                                 onClick={() =>
                                                     handleDelete(crop.id)
@@ -461,6 +561,7 @@ function Crops() {
                                             </button>
 
                                         </div>
+
 
                                     </div>
 

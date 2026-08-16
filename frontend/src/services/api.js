@@ -1,64 +1,68 @@
 import axios from "axios";
 
 // =====================================================
-// AXIOS API INSTANCE
+// API BASE URL
+// =====================================================
+//
+// Local:
+// http://localhost:5173
+//       ↓
+// http://localhost:5000/api
+//
+// Kubernetes:
+// http://EC2-IP:30080
+//       ↓
+// /api
+//       ↓
+// Nginx → backend:5000
+// =====================================================
+
+const API_BASE_URL =
+    window.location.hostname === "localhost"
+        ? "http://localhost:5000/api"
+        : "/api";
+
+// =====================================================
+// AXIOS INSTANCE
 // =====================================================
 
 const api = axios.create({
-    baseURL: "http://localhost:5000/api",
+    baseURL: API_BASE_URL,
     timeout: 30000,
     headers: {
-        "Content-Type": "application/json"
-    }
+        "Content-Type": "application/json",
+    },
 });
 
 // =====================================================
-// ADD JWT TOKEN TO EVERY REQUEST
+// JWT TOKEN
 // =====================================================
 
 api.interceptors.request.use(
     (config) => {
+        const token = localStorage.getItem("token");
 
-        const token =
-            localStorage.getItem("token");
-
-        console.log(
-            "================================="
-        );
-
+        console.log("=================================");
         console.log(
             "API REQUEST:",
             config.method?.toUpperCase(),
-            config.baseURL + config.url
+            `${config.baseURL}${config.url}`
         );
 
         console.log(
             "API TOKEN:",
-            token
-                ? "Token found"
-                : "NO TOKEN"
+            token ? "Token found" : "NO TOKEN"
         );
 
-        // Add JWT
         if (token) {
-
             config.headers = config.headers || {};
-
-            config.headers.Authorization =
-                `Bearer ${token}`;
-
+            config.headers.Authorization = `Bearer ${token}`;
         }
 
         return config;
     },
-
     (error) => {
-
-        console.error(
-            "REQUEST INTERCEPTOR ERROR:",
-            error
-        );
-
+        console.error("REQUEST INTERCEPTOR ERROR:", error);
         return Promise.reject(error);
     }
 );
@@ -68,9 +72,7 @@ api.interceptors.request.use(
 // =====================================================
 
 api.interceptors.response.use(
-
     (response) => {
-
         console.log(
             "API RESPONSE:",
             response.status,
@@ -81,96 +83,27 @@ api.interceptors.response.use(
     },
 
     (error) => {
+        console.error("=================================");
+        console.error("API ERROR");
+        console.error("URL:", error.config?.url);
+        console.error("STATUS:", error.response?.status);
+        console.error("DATA:", error.response?.data);
+        console.error("MESSAGE:", error.message);
 
-        console.error(
-            "================================="
-        );
-
-        console.error(
-            "API ERROR"
-        );
-
-        console.error(
-            "URL:",
-            error.config?.url
-        );
-
-        console.error(
-            "STATUS:",
-            error.response?.status
-        );
-
-        console.error(
-            "DATA:",
-            error.response?.data
-        );
-
-        console.error(
-            "MESSAGE:",
-            error.message
-        );
-
-        // =================================================
-        // 401 - JWT FAILED
-        // =================================================
-
-        if (
-            error.response?.status === 401
-        ) {
-
-            console.error(
-                "JWT authentication failed."
-            );
-
-            console.error(
-                "Please login again."
-            );
-
-            // Optional:
-            // localStorage.removeItem("token");
+        if (error.response?.status === 401) {
+            console.error("JWT authentication failed.");
         }
 
-        // =================================================
-        // 403 - ROLE FAILED
-        // =================================================
-
-        if (
-            error.response?.status === 403
-        ) {
-
-            console.error(
-                "Access denied."
-            );
-
-            console.error(
-                "User may not have farmer role."
-            );
+        if (error.response?.status === 403) {
+            console.error("Access denied.");
         }
 
-        // =================================================
-        // 404 - ROUTE NOT FOUND
-        // =================================================
-
-        if (
-            error.response?.status === 404
-        ) {
-
-            console.error(
-                "API route not found."
-            );
+        if (error.response?.status === 404) {
+            console.error("API route not found.");
         }
 
-        // =================================================
-        // 500 - SERVER ERROR
-        // =================================================
-
-        if (
-            error.response?.status === 500
-        ) {
-
-            console.error(
-                "Backend server error."
-            );
+        if (error.response?.status === 500) {
+            console.error("Backend server error.");
         }
 
         return Promise.reject(error);
