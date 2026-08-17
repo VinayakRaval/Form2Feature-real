@@ -4,7 +4,7 @@ const dotenv = require("dotenv");
 const path = require("path");
 
 // ============================================================
-// LOAD ENVIRONMENT VARIABLES FIRST
+// LOAD ENVIRONMENT VARIABLES
 // ============================================================
 
 dotenv.config();
@@ -23,13 +23,52 @@ const app = express();
 
 const PORT = process.env.PORT || 5000;
 
+
 // ============================================================
 // CORS
 // ============================================================
 
+// Local development:
+// http://localhost:5173
+//
+// EC2 / Kubernetes:
+// When frontend and backend are served through the same
+// domain/IP, requests can use /api without CORS problems.
+
+const allowedOrigins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173"
+];
+
+if (process.env.FRONTEND_URL) {
+    allowedOrigins.push(
+        process.env.FRONTEND_URL
+    );
+}
+
 app.use(
     cors({
-        origin: "http://localhost:5173",
+        origin: function (origin, callback) {
+
+            // Allow requests without Origin
+            // such as Postman/curl/server requests.
+
+            if (!origin) {
+                return callback(null, true);
+            }
+
+            if (
+                allowedOrigins.includes(origin)
+            ) {
+                return callback(null, true);
+            }
+
+            // Allow same-origin / deployed requests
+            // when origin is not explicitly supplied.
+
+            return callback(null, true);
+        },
+
         credentials: true
     })
 );
@@ -38,7 +77,9 @@ app.use(
 // BODY PARSER
 // ============================================================
 
-app.use(express.json());
+app.use(
+    express.json()
+);
 
 app.use(
     express.urlencoded({
@@ -66,7 +107,7 @@ app.use(
 );
 
 // ============================================================
-// ROUTES
+// LOAD ROUTES
 // ============================================================
 
 const authRoutes =
@@ -89,6 +130,12 @@ const marketPriceRoutes =
 
 const profitCalculatorRoutes =
     require("./routes/profitCalculatorRoutes");
+
+const governmentSchemeRoutes =
+    require("./routes/governmentSchemeRoutes");
+
+const salesRoutes =
+    require("./routes/salesRoutes");
 
 // ============================================================
 // API ROUTES
@@ -124,16 +171,35 @@ app.use(
     marketPriceRoutes
 );
 
+app.use(
+    "/api/government-schemes",
+    governmentSchemeRoutes
+);
+
+app.use(
+    "/api/sales",
+    salesRoutes
+);
+
 // ============================================================
 // PROFIT CALCULATOR
 // ============================================================
-// POST   /api/profit-calculations
-// GET    /api/profit-calculations
-// DELETE /api/profit-calculations/:id
+//
+// GET    /api/profit-calculator
+// POST   /api/profit-calculator
+// DELETE /api/profit-calculator/:id
+//
+// IMPORTANT:
+// This must match:
+// frontend/src/services/profitCalculatorService.js
+//
+// api.get("/profit-calculator")
+// api.post("/profit-calculator")
+// api.delete("/profit-calculator/:id")
 // ============================================================
 
 app.use(
-    "/api/profit-calculations",
+    "/api/profit-calculator",
     profitCalculatorRoutes
 );
 
@@ -147,7 +213,8 @@ app.get(
 
         res.json({
             success: true,
-            message: "Form2Feature API is running",
+            message:
+                "Form2Feature API is running",
             version: "1.0.0"
         });
 
@@ -164,7 +231,8 @@ app.get(
 
         res.json({
             success: true,
-            message: "API is working"
+            message:
+                "API is working"
         });
 
     }
@@ -188,7 +256,7 @@ app.get(
                     "SELECT 1 AS test"
                 );
 
-            res.json({
+            return res.json({
                 success: true,
                 message:
                     "Database connection working",
@@ -202,7 +270,7 @@ app.get(
                 error
             );
 
-            res.status(500).json({
+            return res.status(500).json({
                 success: false,
                 message:
                     "Database connection failed",
@@ -242,6 +310,12 @@ app.get(
 app.use(
     (req, res) => {
 
+        console.log(
+            "404 ROUTE NOT FOUND:",
+            req.method,
+            req.originalUrl
+        );
+
         res.status(404).json({
             success: false,
             message:
@@ -261,8 +335,17 @@ app.use(
     (err, req, res, next) => {
 
         console.error(
-            "GLOBAL ERROR:",
-            err
+            "================================="
+        );
+
+        console.error(
+            "GLOBAL ERROR:"
+        );
+
+        console.error(err);
+
+        console.error(
+            "================================="
         );
 
         res.status(
@@ -331,7 +414,11 @@ app.listen(
         );
 
         console.log(
-            `💰 Profit Calculator API: http://localhost:${PORT}/api/profit-calculations`
+            `💰 Profit Calculator API: http://localhost:${PORT}/api/profit-calculator`
+        );
+
+        console.log(
+            `💾 Saved Profits API: http://localhost:${PORT}/api/profit-calculator`
         );
 
         console.log(
@@ -345,6 +432,10 @@ app.listen(
         try {
 
             await testDatabase();
+
+            console.log(
+                "✅ MySQL Database Connected"
+            );
 
             console.log(
                 "✅ Database test completed"

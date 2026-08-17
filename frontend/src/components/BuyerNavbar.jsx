@@ -12,6 +12,7 @@ const Icon = ({
     strokeWidth = 1.8,
     className = ""
 }) => {
+
     const props = {
         width: size,
         height: size,
@@ -25,147 +26,295 @@ const Icon = ({
     };
 
     switch (name) {
+
+        // ----------------------------------------------------
+        // DASHBOARD
+        // ----------------------------------------------------
+
         case "dashboard":
             return (
                 <svg {...props}>
-                    <rect x="3" y="3" width="7" height="7" rx="1" />
-                    <rect x="14" y="3" width="7" height="7" rx="1" />
-                    <rect x="3" y="14" width="7" height="7" rx="1" />
-                    <rect x="14" y="14" width="7" height="7" rx="1" />
+                    <rect
+                        x="3"
+                        y="3"
+                        width="7"
+                        height="7"
+                        rx="1"
+                    />
+                    <rect
+                        x="14"
+                        y="3"
+                        width="7"
+                        height="7"
+                        rx="1"
+                    />
+                    <rect
+                        x="3"
+                        y="14"
+                        width="7"
+                        height="7"
+                        rx="1"
+                    />
+                    <rect
+                        x="14"
+                        y="14"
+                        width="7"
+                        height="7"
+                        rx="1"
+                    />
                 </svg>
             );
+
+        // ----------------------------------------------------
+        // PROFILE
+        // ----------------------------------------------------
 
         case "profile":
             return (
                 <svg {...props}>
-                    <circle cx="12" cy="8" r="4" />
-                    <path d="M4 21c0-4.2 3.4-7 8-7s8 2.8 8 7" />
+                    <circle
+                        cx="12"
+                        cy="8"
+                        r="4"
+                    />
+
+                    <path
+                        d="M4 21c0-4.2 3.4-7 8-7s8 2.8 8 7"
+                    />
                 </svg>
             );
+
+        // ----------------------------------------------------
+        // CROPS
+        // ----------------------------------------------------
 
         case "crops":
             return (
                 <svg {...props}>
+
                     <path d="M12 21V10" />
-                    <path d="M12 14c-4.5 0-7-2.7-7-7 4.5 0 7 2.7 7 7Z" />
-                    <path d="M12 11c0-4.2 2.3-7 6.5-7C18.5 8 16.2 11 12 11Z" />
+
+                    <path
+                        d="M12 14c-4.5 0-7-2.7-7-7 4.5 0 7 2.7 7 7Z"
+                    />
+
+                    <path
+                        d="M12 11c0-4.2 2.3-7 6.5-7C18.5 8 16.2 11 12 11Z"
+                    />
+
                     <path d="M8 21h8" />
+
                 </svg>
             );
 
-        case "plus":
-            return (
-                <svg {...props}>
-                    <path d="M12 5v14" />
-                    <path d="M5 12h14" />
-                </svg>
-            );
-
-        case "market":
-            return (
-                <svg {...props}>
-                    <path d="M3 10h18" />
-                    <path d="M5 10v10" />
-                    <path d="M19 10v10" />
-                    <path d="M4 20h16" />
-                    <path d="M4 10 6 4h12l2 6" />
-                    <path d="M8 20v-6h8v6" />
-                </svg>
-            );
-
-        case "star":
-            return (
-                <svg {...props}>
-                    <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z" />
-                </svg>
-            );
+        // ----------------------------------------------------
+        // OFFERS / MONEY
+        // ----------------------------------------------------
 
         case "money":
             return (
                 <svg {...props}>
-                    <rect x="3" y="5" width="18" height="14" rx="2" />
-                    <circle cx="12" cy="12" r="3" />
+
+                    <rect
+                        x="3"
+                        y="5"
+                        width="18"
+                        height="14"
+                        rx="2"
+                    />
+
+                    <circle
+                        cx="12"
+                        cy="12"
+                        r="3"
+                    />
+
                     <path d="M7 9h.01" />
+
                     <path d="M17 15h.01" />
+
                 </svg>
             );
 
-        case "chart":
+        // ----------------------------------------------------
+        // DEALS
+        // ----------------------------------------------------
+
+        case "deals":
             return (
                 <svg {...props}>
-                    <path d="M4 19V5" />
-                    <path d="M4 19h17" />
-                    <path d="m7 15 4-4 3 2 5-7" />
-                    <path d="M15 6h4v4" />
+
+                    <path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7" />
+
+                    <path d="M2 7h20v5H2z" />
+
+                    <path d="M12 7v14" />
+
+                    <path
+                        d="M12 7H7.5a2.5 2.5 0 1 1 0-5C10 2 12 7 12 7Z"
+                    />
+
+                    <path
+                        d="M12 7h4.5a2.5 2.5 0 1 0 0-5C14 2 12 7 12 7Z"
+                    />
+
                 </svg>
             );
 
-        case "saved":
-            return (
-                <svg {...props}>
-                    <path d="M6 3h12a2 2 0 0 1 2 2v16l-8-4-8 4V5a2 2 0 0 1 2-2Z" />
-                    <path d="M9 8h6" />
-                    <path d="M9 11h6" />
-                </svg>
-            );
+        // ----------------------------------------------------
+        // TRANSACTIONS
+        // ----------------------------------------------------
 
-        case "government":
+        case "transactions":
             return (
                 <svg {...props}>
-                    <path d="M3 9h18" />
-                    <path d="m5 9 7-5 7 5" />
-                    <path d="M5 9v10" />
-                    <path d="M9 9v10" />
-                    <path d="M15 9v10" />
-                    <path d="M19 9v10" />
-                    <path d="M3 19h18" />
-                    <path d="M2 21h20" />
-                </svg>
-            );
 
-        case "sales":
-            return (
-                <svg {...props}>
-                    <rect x="3" y="4" width="18" height="16" rx="2" />
+                    <rect
+                        x="3"
+                        y="4"
+                        width="18"
+                        height="16"
+                        rx="2"
+                    />
+
                     <path d="M7 16v-4" />
+
                     <path d="M12 16V8" />
+
                     <path d="M17 16v-6" />
+
                 </svg>
             );
+
+        // ----------------------------------------------------
+        // MARKET
+        // ----------------------------------------------------
+
+        case "market":
+            return (
+                <svg {...props}>
+
+                    <path d="M3 10h18" />
+
+                    <path d="M5 10v10" />
+
+                    <path d="M19 10v10" />
+
+                    <path d="M4 20h16" />
+
+                    <path d="M4 10 6 4h12l2 6" />
+
+                    <path d="M8 20v-6h8v6" />
+
+                </svg>
+            );
+
+        // ----------------------------------------------------
+        // SEARCH
+        // ----------------------------------------------------
+
+        case "search":
+            return (
+                <svg {...props}>
+
+                    <circle
+                        cx="11"
+                        cy="11"
+                        r="7"
+                    />
+
+                    <path d="m20 20-4-4" />
+
+                </svg>
+            );
+
+        // ----------------------------------------------------
+        // LOGOUT
+        // ----------------------------------------------------
 
         case "logout":
             return (
                 <svg {...props}>
+
                     <path d="M10 17l5-5-5-5" />
+
                     <path d="M15 12H3" />
-                    <path d="M21 19V5a2 2 0 0 0-2-2h-6" />
+
+                    <path
+                        d="M21 19V5a2 2 0 0 0-2-2h-6"
+                    />
+
                 </svg>
             );
+
+        // ----------------------------------------------------
+        // LANGUAGE
+        // ----------------------------------------------------
 
         case "language":
             return (
                 <svg {...props}>
-                    <circle cx="12" cy="12" r="9" />
+
+                    <circle
+                        cx="12"
+                        cy="12"
+                        r="9"
+                    />
+
                     <path d="M3 12h18" />
-                    <path d="M12 3c3 3 4.5 6 4.5 9s-1.5 6-4.5 9" />
-                    <path d="M12 3c-3 3-4.5 6-4.5 9s1.5 6-4.5 9" />
+
+                    <path
+                        d="M12 3c3 3 4.5 6 4.5 9s-1.5 6-4.5 9"
+                    />
+
+                    <path
+                        d="M12 3c-3 3-4.5 6-4.5 9s1.5 6 4.5 9"
+                    />
+
                 </svg>
             );
+
+        // ----------------------------------------------------
+        // HELP
+        // ----------------------------------------------------
 
         case "help":
             return (
                 <svg {...props}>
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M9.5 9a2.5 2.5 0 1 1 4.4 1.6c-.8.9-1.9 1.2-1.9 2.4" />
+
+                    <circle
+                        cx="12"
+                        cy="12"
+                        r="9"
+                    />
+
+                    <path
+                        d="M9.5 9a2.5 2.5 0 1 1 4.4 1.6c-.8.9-1.9 1.2-1.9 2.4"
+                    />
+
                     <path d="M12 16h.01" />
+
                 </svg>
             );
+
+        // ----------------------------------------------------
+        // CONTACT
+        // ----------------------------------------------------
 
         case "contact":
             return (
                 <svg {...props}>
-                    <rect x="3" y="5" width="18" height="14" rx="2" />
+
+                    <rect
+                        x="3"
+                        y="5"
+                        width="18"
+                        height="14"
+                        rx="2"
+                    />
+
                     <path d="m3 7 9 6 9-6" />
+
                 </svg>
             );
 
@@ -174,72 +323,107 @@ const Icon = ({
     }
 };
 
+
 // ============================================================
-// NAVBAR
+// BUYER NAVBAR
 // ============================================================
 
-function Navbar() {
+function BuyerNavbar() {
+
     const navigate = useNavigate();
+
     const location = useLocation();
 
-    const { user, logout } = useAuth();
+    const {
+        user,
+        logout
+    } = useAuth();
+
 
     // ========================================================
-    // USER NAME
+    // BUYER NAME
     // ========================================================
 
-    const userName =
+    const buyerName =
         user?.full_name ||
         user?.name ||
         user?.username ||
-        "Farmer";
+        "Buyer";
+
 
     // ========================================================
     // LOGOUT
     // ========================================================
 
     const handleLogout = () => {
+
         try {
+
             logout();
+
         } catch (error) {
-            console.error("Logout error:", error);
+
+            console.error(
+                "Logout error:",
+                error
+            );
+
         }
 
-        navigate("/login", {
-            replace: true
-        });
+        navigate(
+            "/login",
+            {
+                replace: true
+            }
+        );
     };
+
 
     // ========================================================
     // SKIP TO CONTENT
     // ========================================================
 
     const handleSkipToContent = () => {
-        const element = document.getElementById("main-content");
+
+        const element =
+            document.getElementById(
+                "main-content"
+            );
 
         if (element) {
+
             element.focus();
 
             element.scrollIntoView({
                 behavior: "smooth",
                 block: "start"
             });
+
         }
     };
+
 
     // ========================================================
     // ACTIVE ROUTE
     // ========================================================
 
     const isActive = (path) => {
-        return location.pathname === path;
+
+        return (
+            location.pathname === path ||
+            location.pathname.startsWith(
+                `${path}/`
+            )
+        );
     };
+
 
     // ========================================================
     // DESKTOP NAV CLASS
     // ========================================================
 
     const navClass = (path) => {
+
         return `
             inline-flex
             items-center
@@ -261,11 +445,13 @@ function Navbar() {
         `;
     };
 
+
     // ========================================================
     // MOBILE NAV CLASS
     // ========================================================
 
     const mobileNavClass = (path) => {
+
         return `
             inline-flex
             items-center
@@ -285,114 +471,149 @@ function Navbar() {
         `;
     };
 
+
     // ========================================================
-    // NAVIGATION ITEMS
+    // BUYER NAVIGATION ITEMS
     // ========================================================
 
     const navigationItems = [
+
         {
-            path: "/farmer/dashboard",
+            path: "/buyer/dashboard",
             label: "Dashboard",
             icon: "dashboard"
         },
+
         {
-            path: "/farmer/profile",
+            path: "/buyer/profile",
             label: "Profile",
             icon: "profile"
         },
+
         {
-            path: "/farmer/crops",
-            label: "My Crops",
+            path: "/buyer/crops",
+            label: "Browse Crops",
             icon: "crops"
         },
+
         {
-            path: "/farmer/mandi",
-            label: "Mandi Finder",
-            icon: "market"
+            path: "/buyer/offers",
+            label: "My Offers",
+            icon: "money"
         },
+
         {
-            path: "/farmer/saved-mandis",
-            label: "Saved Mandis",
-            icon: "star"
+            path: "/buyer/deals",
+            label: "Deals",
+            icon: "deals"
         },
+
         {
-            path: "/farmer/market-prices",
+            path: "/buyer/transactions",
+            label: "Transactions",
+            icon: "transactions"
+        },
+
+        {
+            path: "/buyer/market-prices",
             label: "Market Prices",
             icon: "money"
         },
+
         {
-            path: "/farmer/profit",
-            label: "Profit Calculator",
-            icon: "chart"
-        },
-        {
-            path: "/farmer/profit-history",
-            label: "Saved Profits",
-            icon: "saved"
-        },
-        {
-            path: "/farmer/sales",
-            label: "Sales & Transactions",
-            icon: "sales"
-        },
-        {
-            path: "/farmer/government-schemes",
-            label: "Government Schemes",
-            icon: "government"
+            path: "/buyer/mandi",
+            label: "Mandi Finder",
+            icon: "market"
         }
+
     ];
 
+
     return (
+
         <>
+
             {/* ==================================================
                 TOP BLACK BAR
             ================================================== */}
 
             <div className="bg-[#030712] text-white">
+
                 <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+
                     <div className="min-h-[40px] flex items-center justify-between gap-4 text-sm">
+
+                        {/* LEFT */}
 
                         <div className="flex items-center gap-4 sm:gap-5 min-w-0">
 
                             <button
                                 type="button"
-                                onClick={handleSkipToContent}
-                                className="hover:text-gray-300 transition whitespace-nowrap"
+                                onClick={
+                                    handleSkipToContent
+                                }
+                                className="
+                                    hover:text-gray-300
+                                    transition
+                                    whitespace-nowrap
+                                "
                             >
                                 Skip to main content
                             </button>
 
+
                             <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+
                                 <Icon
                                     name="language"
                                     size={15}
                                 />
+
                                 English
+
                             </span>
 
+
                             <span className="hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap">
+
                                 <Icon
                                     name="contact"
                                     size={15}
                                 />
+
                                 Contact us
+
                             </span>
 
+
                             <span className="hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap">
+
                                 <Icon
                                     name="help"
                                     size={15}
                                 />
+
                                 Help
+
                             </span>
+
                         </div>
 
+
+                        {/* RIGHT */}
+
                         <span className="hidden md:block whitespace-nowrap">
+
                             Smart Agriculture Platform
+
                         </span>
+
                     </div>
+
                 </div>
+
             </div>
+
 
             {/* ==================================================
                 MAIN NAVBAR
@@ -402,16 +623,18 @@ function Navbar() {
 
                 <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
 
+
                     {/* ==================================================
                         FIRST ROW
                     ================================================== */}
 
                     <div className="min-h-[72px] flex items-center justify-between gap-5">
 
+
                         {/* LOGO */}
 
                         <Link
-                            to="/farmer/dashboard"
+                            to="/buyer/dashboard"
                             className="
                                 text-2xl
                                 lg:text-3xl
@@ -426,9 +649,13 @@ function Navbar() {
                             Form2Feature
                         </Link>
 
+
                         {/* USER + LOGOUT */}
 
                         <div className="flex items-center gap-3 sm:gap-4">
+
+
+                            {/* USER */}
 
                             <div className="hidden sm:block text-right leading-tight">
 
@@ -441,20 +668,48 @@ function Navbar() {
                                         max-w-[180px]
                                         truncate
                                     "
-                                    title={userName}
+                                    title={buyerName}
                                 >
-                                    {userName}
+                                    {buyerName}
                                 </p>
 
                                 <p className="text-xs text-gray-500">
-                                    Farmer
+                                    Buyer
                                 </p>
 
                             </div>
 
+
+                            {/* AVATAR */}
+
+                            <div
+                                className="
+                                    h-10
+                                    w-10
+                                    rounded-full
+                                    bg-orange-50
+                                    text-[#ff6500]
+                                    flex
+                                    items-center
+                                    justify-center
+                                    font-bold
+                                    border
+                                    border-orange-100
+                                "
+                            >
+                                {buyerName
+                                    .charAt(0)
+                                    .toUpperCase()}
+                            </div>
+
+
+                            {/* LOGOUT */}
+
                             <button
                                 type="button"
-                                onClick={handleLogout}
+                                onClick={
+                                    handleLogout
+                                }
                                 className="
                                     inline-flex
                                     items-center
@@ -474,6 +729,7 @@ function Navbar() {
                                     whitespace-nowrap
                                 "
                             >
+
                                 <Icon
                                     name="logout"
                                     size={17}
@@ -482,10 +738,13 @@ function Navbar() {
                                 <span>
                                     Sign out
                                 </span>
+
                             </button>
 
                         </div>
+
                     </div>
+
 
                     {/* ==================================================
                         DESKTOP NAVIGATION
@@ -503,183 +762,36 @@ function Navbar() {
                                 overflow-x-auto
                                 overflow-y-hidden
                                 whitespace-nowrap
-                                scrollbar-thin
-                                scrollbar-thumb-gray-300
                             "
                         >
 
-                            {/* DASHBOARD */}
+                            {navigationItems.map(
+                                (item) => (
 
-                            <Link
-                                to="/farmer/dashboard"
-                                className={navClass("/farmer/dashboard")}
-                            >
-                                <Icon
-                                    name="dashboard"
-                                    size={17}
-                                />
-                                Dashboard
-                            </Link>
+                                    <Link
+                                        key={item.path}
+                                        to={item.path}
+                                        className={navClass(
+                                            item.path
+                                        )}
+                                    >
 
-                            {/* PROFILE */}
+                                        <Icon
+                                            name={item.icon}
+                                            size={17}
+                                        />
 
-                            <Link
-                                to="/farmer/profile"
-                                className={navClass("/farmer/profile")}
-                            >
-                                <Icon
-                                    name="profile"
-                                    size={17}
-                                />
-                                Profile
-                            </Link>
+                                        {item.label}
 
-                            {/* MY CROPS */}
+                                    </Link>
 
-                            <Link
-                                to="/farmer/crops"
-                                className={navClass("/farmer/crops")}
-                            >
-                                <Icon
-                                    name="crops"
-                                    size={17}
-                                />
-                                My Crops
-                            </Link>
-
-                            {/* ADD CROP */}
-
-                            <Link
-                                to="/farmer/crops/add"
-                                className="
-                                    inline-flex
-                                    items-center
-                                    justify-center
-                                    gap-1
-                                    px-3
-                                    py-2
-                                    rounded-lg
-                                    bg-[#fff4ed]
-                                    text-[#ff6500]
-                                    border
-                                    border-[#ff6500]
-                                    text-sm
-                                    font-semibold
-                                    whitespace-nowrap
-                                    flex-shrink-0
-                                    hover:bg-[#ff6500]
-                                    hover:text-white
-                                    transition
-                                "
-                            >
-                                <Icon
-                                    name="plus"
-                                    size={16}
-                                />
-
-                                Add Crop
-                            </Link>
-
-                            {/* MANDI FINDER */}
-
-                            <Link
-                                to="/farmer/mandi"
-                                className={navClass("/farmer/mandi")}
-                            >
-                                <Icon
-                                    name="market"
-                                    size={17}
-                                />
-
-                                Mandi Finder
-                            </Link>
-
-                            {/* SAVED MANDIS */}
-
-                            <Link
-                                to="/farmer/saved-mandis"
-                                className={navClass("/farmer/saved-mandis")}
-                            >
-                                <Icon
-                                    name="star"
-                                    size={17}
-                                />
-
-                                Saved Mandis
-                            </Link>
-
-                            {/* MARKET PRICES */}
-
-                            <Link
-                                to="/farmer/market-prices"
-                                className={navClass("/farmer/market-prices")}
-                            >
-                                <Icon
-                                    name="money"
-                                    size={17}
-                                />
-
-                                Market Prices
-                            </Link>
-
-                            {/* PROFIT CALCULATOR */}
-
-                            <Link
-                                to="/farmer/profit"
-                                className={navClass("/farmer/profit")}
-                            >
-                                <Icon
-                                    name="chart"
-                                    size={17}
-                                />
-
-                                Profit Calculator
-                            </Link>
-
-                            {/* SAVED PROFITS */}
-
-                            <Link
-                                to="/farmer/profit-history"
-                                className={navClass("/farmer/profit-history")}
-                            >
-                                <Icon
-                                    name="saved"
-                                    size={17}
-                                />
-
-                                Saved Profits
-                            </Link>
-
-                            {/* SALES */}
-
-                            <Link
-                                to="/farmer/sales"
-                                className={navClass("/farmer/sales")}
-                            >
-                                <Icon
-                                    name="sales"
-                                    size={17}
-                                />
-
-                                Sales & Transactions
-                            </Link>
-
-                            {/* GOVERNMENT SCHEMES */}
-
-                            <Link
-                                to="/farmer/government-schemes"
-                                className={navClass("/farmer/government-schemes")}
-                            >
-                                <Icon
-                                    name="government"
-                                    size={17}
-                                />
-
-                                Government Schemes
-                            </Link>
+                                )
+                            )}
 
                         </div>
+
                     </div>
+
 
                     {/* ==================================================
                         MOBILE / TABLET NAVIGATION
@@ -689,24 +801,34 @@ function Navbar() {
 
                         <div className="flex flex-wrap items-center gap-2">
 
-                            {navigationItems.map((item) => (
-                                <Link
-                                    key={item.path}
-                                    to={item.path}
-                                    className={mobileNavClass(item.path)}
-                                >
-                                    <Icon
-                                        name={item.icon}
-                                        size={16}
-                                    />
+                            {navigationItems.map(
+                                (item) => (
 
-                                    {item.label}
-                                </Link>
-                            ))}
+                                    <Link
+                                        key={item.path}
+                                        to={item.path}
+                                        className={mobileNavClass(
+                                            item.path
+                                        )}
+                                    >
+
+                                        <Icon
+                                            name={item.icon}
+                                            size={16}
+                                        />
+
+                                        {item.label}
+
+                                    </Link>
+
+                                )
+                            )}
+
 
                             {/* MOBILE USER */}
 
                             <div className="w-full flex items-center justify-between border-t border-gray-200 pt-3 mt-2">
+
 
                                 <div className="min-w-0">
 
@@ -718,18 +840,21 @@ function Navbar() {
                                             truncate
                                         "
                                     >
-                                        {userName}
+                                        {buyerName}
                                     </p>
 
                                     <p className="text-xs text-gray-500">
-                                        Farmer
+                                        Buyer
                                     </p>
 
                                 </div>
 
+
                                 <button
                                     type="button"
-                                    onClick={handleLogout}
+                                    onClick={
+                                        handleLogout
+                                    }
                                     className="
                                         inline-flex
                                         items-center
@@ -747,23 +872,29 @@ function Navbar() {
                                         whitespace-nowrap
                                     "
                                 >
+
                                     <Icon
                                         name="logout"
                                         size={16}
                                     />
 
                                     Sign out
+
                                 </button>
 
                             </div>
 
                         </div>
+
                     </div>
 
                 </div>
+
             </nav>
+
         </>
+
     );
 }
 
-export default Navbar;
+export default BuyerNavbar;

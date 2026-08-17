@@ -3,15 +3,21 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function Login() {
+
     const navigate = useNavigate();
+
     const { login } = useAuth();
+
 
     // =========================================================
     // STATE
     // =========================================================
 
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const [email, setEmail] =
+        useState("");
+
+    const [password, setPassword] =
+        useState("");
 
     const [showPassword, setShowPassword] =
         useState(false);
@@ -28,24 +34,28 @@ function Login() {
     const [loading, setLoading] =
         useState(false);
 
+
     // =========================================================
     // GENERATE CAPTCHA
     // =========================================================
 
     const generateCaptcha = () => {
+
         const characters =
             "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
         let result = "";
 
         for (let i = 0; i < 5; i++) {
+
             result +=
                 characters.charAt(
                     Math.floor(
                         Math.random() *
-                            characters.length
+                        characters.length
                     )
                 );
+
         }
 
         setCaptcha(result);
@@ -54,22 +64,28 @@ function Login() {
         setSecurityCode("");
     };
 
+
     // =========================================================
     // GENERATE CAPTCHA WHEN PAGE LOADS
     // =========================================================
 
     useEffect(() => {
+
         generateCaptcha();
+
     }, []);
+
 
     // =========================================================
     // LOGIN
     // =========================================================
 
     const handleSubmit = async (e) => {
+
         e.preventDefault();
 
         setError("");
+
 
         // -----------------------------------------------------
         // VALIDATE CAPTCHA
@@ -85,45 +101,57 @@ function Login() {
                 .trim()
                 .toUpperCase();
 
+
         if (!enteredCode) {
+
             setError(
                 "Please enter the security verification code."
             );
+
             return;
         }
 
+
         if (enteredCode !== actualCode) {
+
             setError(
                 "Invalid security verification code."
             );
 
-            // Generate a fresh CAPTCHA
+            // Generate fresh CAPTCHA
             generateCaptcha();
 
             return;
         }
+
 
         // -----------------------------------------------------
         // VALIDATE EMAIL
         // -----------------------------------------------------
 
         if (!email.trim()) {
+
             setError(
                 "Please enter your email address."
             );
+
             return;
         }
+
 
         // -----------------------------------------------------
         // VALIDATE PASSWORD
         // -----------------------------------------------------
 
         if (!password) {
+
             setError(
                 "Please enter your password."
             );
+
             return;
         }
+
 
         // -----------------------------------------------------
         // START LOGIN
@@ -131,25 +159,35 @@ function Login() {
 
         setLoading(true);
 
+
         try {
+
             const result =
                 await login(
                     email.trim(),
                     password
                 );
 
+
             console.log(
                 "LOGIN RESULT:",
                 result
             );
+
 
             // -------------------------------------------------
             // SUCCESS
             // -------------------------------------------------
 
             if (result?.success) {
+
                 const role =
-                    result?.user?.role;
+                    String(
+                        result?.user?.role || ""
+                    )
+                    .trim()
+                    .toLowerCase();
+
 
                 console.log(
                     "LOGIN SUCCESS"
@@ -160,24 +198,52 @@ function Login() {
                     role
                 );
 
+
+                // =================================================
+                // FARMER
+                // =================================================
+
                 if (role === "farmer") {
+
                     navigate(
                         "/farmer/dashboard",
                         {
                             replace: true
                         }
                     );
-                } else {
+
+                    return;
+                }
+
+
+                // =================================================
+                // BUYER
+                // =================================================
+
+                if (role === "buyer") {
+
                     navigate(
-                        "/",
+                        "/buyer/dashboard",
                         {
                             replace: true
                         }
                     );
+
+                    return;
                 }
+
+
+                // =================================================
+                // UNKNOWN ROLE
+                // =================================================
+
+                setError(
+                    "Invalid user role. Please contact administrator."
+                );
 
                 return;
             }
+
 
             // -------------------------------------------------
             // LOGIN FAILED
@@ -185,62 +251,89 @@ function Login() {
 
             setError(
                 result?.message ||
-                    "Invalid email or password."
+                "Invalid email or password."
             );
 
             generateCaptcha();
 
+
         } catch (err) {
+
             console.error(
                 "LOGIN ERROR:",
                 err
             );
 
+
             setError(
                 err?.response?.data?.message ||
-                    err?.message ||
-                    "Authentication failed. Please try again."
+                err?.message ||
+                "Authentication failed. Please try again."
             );
+
 
             generateCaptcha();
 
+
         } finally {
+
             setLoading(false);
+
         }
+
     };
+
 
     // =========================================================
     // HOME
     // =========================================================
 
     const goHome = () => {
-        navigate("/", {
-            replace: false
-        });
+
+        navigate(
+            "/",
+            {
+                replace: false
+            }
+        );
+
     };
+
 
     // =========================================================
     // REGISTER
     // =========================================================
 
     const goRegister = () => {
-        navigate("/register");
+
+        navigate(
+            "/register"
+        );
+
     };
+
 
     // =========================================================
     // FORGOT PASSWORD
     // =========================================================
 
     const goForgotPassword = () => {
-        navigate("/forgot-password");
+
+        navigate(
+            "/forgot-password"
+        );
+
     };
+
 
     // =========================================================
     // UI
     // =========================================================
 
     return (
+
         <div className="min-h-screen bg-[#f4f5f7] flex flex-col font-sans">
+
 
             {/* =================================================
                 TOP ANNOUNCEMENT BAR
@@ -270,13 +363,17 @@ function Login() {
 
                     </div>
 
+
                     <div className="hidden sm:block">
+
                         Smart Agriculture Platform
+
                     </div>
 
                 </div>
 
             </div>
+
 
             {/* =================================================
                 NAVBAR
@@ -285,6 +382,7 @@ function Login() {
             <header className="bg-white border-b border-gray-200">
 
                 <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+
 
                     {/* LOGO */}
 
@@ -295,9 +393,11 @@ function Login() {
                         Form2Feature
                     </Link>
 
+
                     {/* NAV BUTTONS */}
 
                     <div className="flex items-center gap-3">
+
 
                         {/* HOME */}
 
@@ -307,6 +407,7 @@ function Login() {
                         >
                             Home
                         </Link>
+
 
                         {/* CREATE ACCOUNT */}
 
@@ -323,6 +424,7 @@ function Login() {
 
             </header>
 
+
             {/* =================================================
                 MAIN
             ================================================== */}
@@ -331,11 +433,13 @@ function Login() {
 
                 <div className="w-full max-w-[480px]">
 
+
                     {/* =================================================
                         LOGIN CARD
                     ================================================== */}
 
                     <div className="bg-white rounded-2xl overflow-hidden shadow-xl border border-gray-100">
+
 
                         {/* CARD HEADER */}
 
@@ -349,15 +453,22 @@ function Login() {
 
                             </div>
 
+
                             <h2 className="text-xl font-black tracking-wide uppercase">
+
                                 Log In
+
                             </h2>
 
+
                             <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mt-1">
+
                                 Farmer & User Portal
+
                             </p>
 
                         </div>
+
 
                         {/* =================================================
                             FORM
@@ -370,22 +481,30 @@ function Login() {
                                 className="space-y-4"
                             >
 
+
                                 {/* EMAIL */}
 
                                 <div>
 
                                     <label className="block text-xs font-bold tracking-wider text-[#111827] mb-1 uppercase">
+
                                         Email Address
+
                                         <span className="text-[#f95700]">
                                             {" "}*
                                         </span>
+
                                     </label>
+
 
                                     <div className="flex border border-gray-300 rounded-lg overflow-hidden focus-within:border-[#f95700] focus-within:ring-1 focus-within:ring-[#f95700] transition">
 
                                         <div className="w-10 bg-gray-50 border-r border-gray-200 flex items-center justify-center text-sm text-gray-500">
+
                                             👤
+
                                         </div>
+
 
                                         <input
                                             type="email"
@@ -405,22 +524,30 @@ function Login() {
 
                                 </div>
 
+
                                 {/* PASSWORD */}
 
                                 <div>
 
                                     <label className="block text-xs font-bold tracking-wider text-[#111827] mb-1 uppercase">
+
                                         Password
+
                                         <span className="text-[#f95700]">
                                             {" "}*
                                         </span>
+
                                     </label>
+
 
                                     <div className="flex border border-gray-300 rounded-lg overflow-hidden focus-within:border-[#f95700] focus-within:ring-1 focus-within:ring-[#f95700] transition">
 
                                         <div className="w-10 bg-gray-50 border-r border-gray-200 flex items-center justify-center text-sm text-gray-500">
+
                                             🔒
+
                                         </div>
+
 
                                         <input
                                             type={
@@ -440,6 +567,7 @@ function Login() {
                                             required
                                         />
 
+
                                         <button
                                             type="button"
                                             onClick={() =>
@@ -455,14 +583,17 @@ function Login() {
                                                     : "Show password"
                                             }
                                         >
+
                                             {showPassword
                                                 ? "🙈"
                                                 : "👁️"}
+
                                         </button>
 
                                     </div>
 
                                 </div>
+
 
                                 {/* =================================================
                                     CAPTCHA
@@ -471,21 +602,29 @@ function Login() {
                                 <div>
 
                                     <label className="block text-xs font-bold tracking-wider text-[#111827] mb-1 uppercase">
+
                                         Security Verification
+
                                         <span className="text-[#f95700]">
                                             {" "}*
                                         </span>
+
                                     </label>
 
+
                                     <div className="flex gap-2">
+
 
                                         {/* INPUT */}
 
                                         <div className="flex flex-1 border border-gray-300 rounded-lg overflow-hidden focus-within:border-[#f95700] focus-within:ring-1 focus-within:ring-[#f95700] transition">
 
                                             <div className="w-10 bg-gray-50 border-r border-gray-200 flex items-center justify-center text-sm text-gray-500">
+
                                                 🛡️
+
                                             </div>
+
 
                                             <input
                                                 type="text"
@@ -504,43 +643,60 @@ function Login() {
 
                                         </div>
 
+
                                         {/* CAPTCHA DISPLAY */}
 
                                         <div
                                             className="w-28 bg-[#111827] rounded-lg flex items-center justify-center text-[#f95700] font-bold tracking-[0.15em] italic select-none text-base border border-gray-700"
                                             title="Security code"
                                         >
+
                                             {captcha}
+
                                         </div>
+
 
                                         {/* REFRESH */}
 
                                         <button
                                             type="button"
-                                            onClick={generateCaptcha}
+                                            onClick={
+                                                generateCaptcha
+                                            }
                                             className="w-11 border border-gray-300 rounded-lg hover:bg-gray-100 transition flex items-center justify-center font-bold text-gray-600 text-lg"
                                             title="Generate new security code"
                                         >
+
                                             ↻
+
                                         </button>
 
                                     </div>
 
+
                                     <p className="text-[11px] text-gray-400 mt-1">
+
                                         Enter the 5-character code shown above.
+
                                     </p>
 
                                 </div>
+
 
                                 {/* =================================================
                                     ERROR
                                 ================================================== */}
 
                                 {error && (
+
                                     <div className="bg-red-50 border border-red-200 text-red-600 rounded-lg p-3 text-xs font-medium">
+
                                         {error}
+
                                     </div>
+
                                 )}
+
 
                                 {/* =================================================
                                     LOGIN + CANCEL
@@ -548,15 +704,19 @@ function Login() {
 
                                 <div className="grid grid-cols-2 gap-3 pt-1">
 
+
                                     <button
                                         type="submit"
                                         disabled={loading}
                                         className="bg-[#f95700] hover:bg-[#e04e00] active:bg-[#c94500] text-white rounded-lg py-3 text-sm font-semibold transition shadow-md shadow-[#f95700]/20 disabled:opacity-60 disabled:cursor-not-allowed"
                                     >
+
                                         {loading
                                             ? "Signing In..."
                                             : "➜  Log In"}
+
                                     </button>
+
 
                                     {/* HOME/CANCEL */}
 
@@ -564,12 +724,15 @@ function Login() {
                                         to="/"
                                         className="border border-gray-300 text-gray-700 bg-gray-50 rounded-lg py-3 text-sm font-semibold hover:bg-gray-100 transition text-center"
                                     >
+
                                         Home
+
                                     </Link>
 
                                 </div>
 
                             </form>
+
 
                             {/* =================================================
                                 BOTTOM OPTIONS
@@ -577,19 +740,27 @@ function Login() {
 
                             <div className="flex justify-between items-center gap-3 mt-5 pt-4 border-t border-gray-100">
 
+
                                 <button
                                     type="button"
-                                    onClick={goForgotPassword}
+                                    onClick={
+                                        goForgotPassword
+                                    }
                                     className="text-xs font-semibold text-gray-600 hover:text-[#f95700] transition"
                                 >
+
                                     Forgot Password?
+
                                 </button>
+
 
                                 <Link
                                     to="/register"
                                     className="text-xs font-semibold text-[#f95700] hover:underline transition"
                                 >
+
                                     Create Account
+
                                 </Link>
 
                             </div>
@@ -601,6 +772,7 @@ function Login() {
                 </div>
 
             </main>
+
 
             {/* =================================================
                 FOOTER
@@ -617,7 +789,9 @@ function Login() {
             </footer>
 
         </div>
+
     );
+
 }
 
 export default Login;

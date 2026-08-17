@@ -1,298 +1,590 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { registerFarmer } from "../services/authService";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { registerUser } from "../services/authService";
 
 function Register() {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
 
-  const [form, setForm] = useState({
-    full_name: "",
-    email: "",
-    mobile: "",
-    password: "",
-    confirmPassword: "",
-  });
-
-  const [securityCode, setSecurityCode] = useState("");
-  const [captcha, setCaptcha] = useState("K7P4X");
-
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
+    const [form, setForm] = useState({
+        full_name: "",
+        email: "",
+        mobile: "",
+        password: "",
+        confirmPassword: "",
+        role: "farmer",
     });
-  };
 
-  const generateCaptcha = () => {
-    const characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    let result = "";
+    const [securityCode, setSecurityCode] = useState("");
+    const [captcha, setCaptcha] = useState("");
 
-    for (let i = 0; i < 5; i++) {
-      result += characters.charAt(
-        Math.floor(Math.random() * characters.length)
-      );
-    }
+    const [message, setMessage] = useState("");
+    const [messageType, setMessageType] = useState("");
 
-    setCaptcha(result);
-  };
+    const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage("");
+    // =========================================================
+    // CAPTCHA
+    // =========================================================
 
-    if (form.password !== form.confirmPassword) {
-      setMessage("Passwords do not match.");
-      return;
-    }
+    const generateCaptcha = () => {
+        const characters =
+            "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-    if (securityCode.toUpperCase() !== captcha) {
-      setMessage("Invalid security verification code.");
-      return;
-    }
+        let result = "";
 
-    setLoading(true);
+        for (let i = 0; i < 5; i++) {
+            result += characters.charAt(
+                Math.floor(
+                    Math.random() * characters.length
+                )
+            );
+        }
 
-    try {
-      const result = await registerFarmer({
-        full_name: form.full_name,
-        email: form.email,
-        mobile: form.mobile,
-        password: form.password,
-      });
+        setCaptcha(result);
+        setSecurityCode("");
+    };
 
-      if (result.success) {
-        setMessage("Account created successfully. Redirecting to login...");
+    useEffect(() => {
+        generateCaptcha();
+    }, []);
 
-        setTimeout(() => {
-          navigate("/login");
-        }, 1200);
-      } else {
-        setMessage(result.message);
-      }
-    } catch (error) {
-      setMessage(
-        error.response?.data?.message || "Registration failed."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+    // =========================================================
+    // HANDLE INPUT
+    // =========================================================
 
-  return (
-    <div className="h-screen bg-[#f4f5f7] flex flex-col font-sans overflow-hidden">
-      {/* TOP ANNOUNCEMENT BAR */}
-      <div className="bg-[#0b1320] text-gray-300 text-xs py-1.5 px-6 flex justify-between items-center shrink-0">
-        <div className="flex gap-4">
-          <span className="hover:underline cursor-pointer">Skip to main content</span>
-          <span className="hover:underline cursor-pointer">English</span>
-          <span className="hover:underline cursor-pointer">Contact us</span>
-          <span className="hover:underline cursor-pointer">Help</span>
-        </div>
-        <div>Smart Agriculture Platform</div>
-      </div>
+    const handleChange = (e) => {
+        const { name, value } = e.target;
 
-      {/* HEADER / NAVBAR */}
-      <header className="bg-white border-b border-gray-200 text-[#111827] shrink-0">
-        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
-          <div
-            onClick={() => navigate("/")}
-            className="flex items-center gap-2 cursor-pointer"
-          >
-            <h1 className="font-extrabold text-2xl text-[#f95700] tracking-tight">
-              Form2Feature
-            </h1>
-          </div>
+        setForm((previous) => ({
+            ...previous,
+            [name]: value,
+        }));
+    };
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate("/")}
-              className="text-xs font-semibold text-gray-700 hover:text-[#f95700] transition"
-            >
-              Home
-            </button>
-            <button
-              onClick={() => navigate("/login")}
-              className="text-xs font-semibold text-[#f95700] border border-[#f95700] px-3.5 py-1.5 rounded-lg hover:bg-[#fff7f2] transition"
-            >
-              Sign in
-            </button>
-          </div>
-        </div>
-      </header>
+    // =========================================================
+    // HANDLE REGISTER
+    // =========================================================
 
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 flex justify-center items-center px-4 py-3 overflow-hidden">
-        <div className="w-full max-w-[500px]">
-          <div className="bg-white rounded-2xl overflow-hidden shadow-xl border border-gray-100">
-            {/* CARD HEADER */}
-            <div className="bg-[#111827] text-white text-center px-6 py-5 border-b-4 border-[#f95700]">
-              <div className="mx-auto w-11 h-11 rounded-full bg-[#f95700]/20 border border-[#f95700]/40 flex items-center justify-center mb-1.5">
-                <span className="text-xl">👨‍🌾</span>
-              </div>
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-              <h2 className="text-xl font-black tracking-wide uppercase">
-                Create Account
-              </h2>
+        setMessage("");
+        setMessageType("");
 
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Farmer Registration
-              </p>
-            </div>
+        // Name
+        if (!form.full_name.trim()) {
+            setMessage("Please enter your full name.");
+            setMessageType("error");
+            return;
+        }
 
-            {/* FORM */}
-            <div className="px-7 py-5">
-              <form onSubmit={handleSubmit} className="space-y-3">
-                {/* NAME */}
-                <div>
-                  <label className="block text-xs font-bold tracking-wider text-[#111827] mb-1 uppercase">
-                    Full Name <span className="text-[#f95700]">*</span>
-                  </label>
-                  <input
-                    name="full_name"
-                    value={form.full_name}
-                    onChange={handleChange}
-                    placeholder="Enter your full name"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-[#f95700] focus:ring-1 focus:ring-[#f95700] transition text-sm text-gray-800 placeholder-gray-400"
-                    required
-                  />
-                </div>
+        // Email
+        if (!form.email.trim()) {
+            setMessage("Please enter your email address.");
+            setMessageType("error");
+            return;
+        }
 
-                {/* EMAIL & MOBILE IN ONE ROW */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold tracking-wider text-[#111827] mb-1 uppercase">
-                      Email <span className="text-[#f95700]">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={form.email}
-                      onChange={handleChange}
-                      placeholder="Enter email address"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-[#f95700] focus:ring-1 focus:ring-[#f95700] transition text-sm text-gray-800 placeholder-gray-400"
-                      required
-                    />
-                  </div>
+        // Mobile
+        if (!/^[0-9]{10}$/.test(form.mobile.trim())) {
+            setMessage(
+                "Mobile number must contain exactly 10 digits."
+            );
+            setMessageType("error");
+            return;
+        }
 
-                  <div>
-                    <label className="block text-xs font-bold tracking-wider text-[#111827] mb-1 uppercase">
-                      Mobile <span className="text-[#f95700]">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      name="mobile"
-                      value={form.mobile}
-                      onChange={handleChange}
-                      placeholder="Enter mobile"
-                      maxLength="10"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-[#f95700] focus:ring-1 focus:ring-[#f95700] transition text-sm text-gray-800 placeholder-gray-400"
-                      required
-                    />
-                  </div>
-                </div>
+        // Password
+        if (form.password.length < 6) {
+            setMessage(
+                "Password must contain at least 6 characters."
+            );
+            setMessageType("error");
+            return;
+        }
 
-                {/* PASSWORD & CONFIRM PASSWORD IN ONE ROW */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold tracking-wider text-[#111827] mb-1 uppercase">
-                      Password <span className="text-[#f95700]">*</span>
-                    </label>
-                    <input
-                      type="password"
-                      name="password"
-                      value={form.password}
-                      onChange={handleChange}
-                      placeholder="Password"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-[#f95700] focus:ring-1 focus:ring-[#f95700] transition text-sm text-gray-800 placeholder-gray-400"
-                      required
-                    />
-                  </div>
+        // Confirm password
+        if (
+            form.password !==
+            form.confirmPassword
+        ) {
+            setMessage("Passwords do not match.");
+            setMessageType("error");
+            return;
+        }
 
-                  <div>
-                    <label className="block text-xs font-bold tracking-wider text-[#111827] mb-1 uppercase">
-                      Confirm <span className="text-[#f95700]">*</span>
-                    </label>
-                    <input
-                      type="password"
-                      name="confirmPassword"
-                      value={form.confirmPassword}
-                      onChange={handleChange}
-                      placeholder="Confirm"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-[#f95700] focus:ring-1 focus:ring-[#f95700] transition text-sm text-gray-800 placeholder-gray-400"
-                      required
-                    />
-                  </div>
-                </div>
+        // CAPTCHA
+        if (
+            securityCode.trim().toUpperCase() !==
+            captcha.trim().toUpperCase()
+        ) {
+            setMessage(
+                "Invalid security verification code."
+            );
+            setMessageType("error");
 
-                {/* SECURITY VERIFICATION */}
-                <div>
-                  <label className="block text-xs font-bold tracking-wider text-[#111827] mb-1 uppercase">
-                    Security Code <span className="text-[#f95700]">*</span>
-                  </label>
+            generateCaptcha();
 
-                  <div className="flex gap-2">
-                    <input
-                      value={securityCode}
-                      onChange={(e) => setSecurityCode(e.target.value)}
-                      placeholder="Enter code"
-                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-[#f95700] focus:ring-1 focus:ring-[#f95700] transition text-sm text-gray-800 placeholder-gray-400"
-                      required
-                    />
+            return;
+        }
 
-                    <div className="w-28 rounded-lg bg-[#111827] text-[#f95700] flex items-center justify-center font-bold tracking-[0.15em] italic select-none text-base">
-                      {captcha}
+        setLoading(true);
+
+        try {
+            console.log("REGISTER:", {
+                full_name: form.full_name,
+                email: form.email,
+                mobile: form.mobile,
+                role: form.role,
+            });
+
+            const result = await registerUser({
+                full_name: form.full_name.trim(),
+                email: form.email.trim(),
+                mobile: form.mobile.trim(),
+                password: form.password,
+                role: form.role,
+            });
+
+            console.log(
+                "REGISTER RESPONSE:",
+                result
+            );
+
+            if (result?.success) {
+                setMessage(
+                    `${form.role === "buyer"
+                        ? "Buyer"
+                        : "Farmer"
+                    } account created successfully.`
+                );
+
+                setMessageType("success");
+
+                setTimeout(() => {
+                    navigate("/login");
+                }, 1200);
+
+                return;
+            }
+
+            setMessage(
+                result?.message ||
+                "Registration failed."
+            );
+
+            setMessageType("error");
+
+            generateCaptcha();
+
+        } catch (error) {
+            console.error(
+                "REGISTER ERROR:",
+                error
+            );
+
+            setMessage(
+                error?.response?.data?.message ||
+                error?.message ||
+                "Registration failed."
+            );
+
+            setMessageType("error");
+
+            generateCaptcha();
+
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-[#f4f5f7] flex flex-col">
+
+            {/* TOP BAR */}
+
+            <div className="bg-[#0b1320] text-gray-300 text-xs py-2 px-6">
+
+                <div className="max-w-7xl mx-auto flex justify-between">
+
+                    <div className="flex gap-4">
+                        <span>
+                            Skip to main content
+                        </span>
+
+                        <span>
+                            English
+                        </span>
+
+                        <span>
+                            Contact us
+                        </span>
+
+                        <span>
+                            Help
+                        </span>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={generateCaptcha}
-                      className="w-10 border border-gray-300 rounded-lg hover:bg-gray-100 transition flex items-center justify-center font-bold text-gray-600 text-base"
-                      title="Refresh code"
-                    >
-                      ↻
-                    </button>
-                  </div>
+                    <span>
+                        Smart Agriculture Platform
+                    </span>
+
                 </div>
 
-                {/* MESSAGE */}
-                {message && (
-                  <div className="bg-orange-50 border border-orange-200 text-[#f95700] rounded-lg p-2.5 text-xs">
-                    {message}
-                  </div>
-                )}
-
-                {/* SUBMIT BUTTON */}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-[#f95700] hover:bg-[#e04e00] active:bg-[#c94500] text-white rounded-lg py-2.5 text-sm font-semibold transition shadow-md shadow-[#f95700]/20 disabled:opacity-70 mt-1"
-                >
-                  {loading ? "Creating Account..." : "Create Farmer Account"}
-                </button>
-              </form>
-
-              <button
-                onClick={() => navigate("/login")}
-                className="w-full mt-3 text-gray-600 text-xs font-semibold hover:text-[#f95700] transition"
-              >
-                Already registered? <span className="text-[#f95700] underline">Sign in</span>
-              </button>
             </div>
-          </div>
-        </div>
-      </main>
 
-      {/* FOOTER */}
-      <footer className="bg-[#111827] border-t-2 border-[#f95700] text-gray-300 shrink-0">
-        <div className="max-w-5xl mx-auto px-6 py-2.5 text-center text-xs text-gray-400">
-          © 2026 Form2Feature. All rights reserved.
+            {/* NAVBAR */}
+
+            <header className="bg-white border-b">
+
+                <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+
+                    <Link
+                        to="/"
+                        className="font-extrabold text-2xl text-[#f95700]"
+                    >
+                        Form2Feature
+                    </Link>
+
+                    <div className="flex gap-3">
+
+                        <Link
+                            to="/"
+                            className="text-sm font-semibold text-gray-700 px-3 py-2 hover:text-[#f95700]"
+                        >
+                            Home
+                        </Link>
+
+                        <Link
+                            to="/login"
+                            className="text-sm font-semibold text-[#f95700] border border-[#f95700] px-4 py-2 rounded-lg"
+                        >
+                            Sign in
+                        </Link>
+
+                    </div>
+
+                </div>
+
+            </header>
+
+            {/* MAIN */}
+
+            <main className="flex-1 flex justify-center items-center px-4 py-8">
+
+                <div className="w-full max-w-[520px]">
+
+                    <div className="bg-white rounded-2xl shadow-xl border overflow-hidden">
+
+                        {/* HEADER */}
+
+                        <div className="bg-[#111827] text-white text-center px-6 py-6 border-b-4 border-[#f95700]">
+
+                            <div className="text-4xl mb-2">
+                                {form.role === "buyer"
+                                    ? "🛒"
+                                    : "👨‍🌾"}
+                            </div>
+
+                            <h2 className="text-xl font-black uppercase">
+                                Create Account
+                            </h2>
+
+                            <p className="text-xs text-gray-400 uppercase mt-1">
+                                {form.role === "buyer"
+                                    ? "Buyer Registration"
+                                    : "Farmer Registration"}
+                            </p>
+
+                        </div>
+
+                        {/* FORM */}
+
+                        <div className="px-7 py-6">
+
+                            <form
+                                onSubmit={handleSubmit}
+                                className="space-y-4"
+                            >
+
+                                {/* ROLE */}
+
+                                <div>
+
+                                    <label className="block text-xs font-bold uppercase mb-2">
+                                        Register As *
+                                    </label>
+
+                                    <div className="grid grid-cols-2 gap-3">
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setForm(
+                                                    (previous) => ({
+                                                        ...previous,
+                                                        role: "farmer",
+                                                    })
+                                                )
+                                            }
+                                            className={`p-3 rounded-lg border font-bold ${
+                                                form.role === "farmer"
+                                                    ? "border-[#f95700] bg-[#fff7f2] text-[#f95700]"
+                                                    : "border-gray-300"
+                                            }`}
+                                        >
+                                            👨‍🌾 Farmer
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setForm(
+                                                    (previous) => ({
+                                                        ...previous,
+                                                        role: "buyer",
+                                                    })
+                                                )
+                                            }
+                                            className={`p-3 rounded-lg border font-bold ${
+                                                form.role === "buyer"
+                                                    ? "border-[#f95700] bg-[#fff7f2] text-[#f95700]"
+                                                    : "border-gray-300"
+                                            }`}
+                                        >
+                                            🛒 Buyer
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                                {/* NAME */}
+
+                                <div>
+
+                                    <label className="block text-xs font-bold uppercase mb-1">
+                                        Full Name *
+                                    </label>
+
+                                    <input
+                                        name="full_name"
+                                        value={
+                                            form.full_name
+                                        }
+                                        onChange={
+                                            handleChange
+                                        }
+                                        placeholder="Enter full name"
+                                        className="w-full border rounded-lg px-3 py-3 outline-none focus:border-[#f95700]"
+                                        required
+                                    />
+
+                                </div>
+
+                                {/* EMAIL + MOBILE */}
+
+                                <div className="grid grid-cols-2 gap-3">
+
+                                    <div>
+
+                                        <label className="block text-xs font-bold uppercase mb-1">
+                                            Email *
+                                        </label>
+
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            value={
+                                                form.email
+                                            }
+                                            onChange={
+                                                handleChange
+                                            }
+                                            placeholder="Email"
+                                            className="w-full border rounded-lg px-3 py-3 outline-none focus:border-[#f95700]"
+                                            required
+                                        />
+
+                                    </div>
+
+                                    <div>
+
+                                        <label className="block text-xs font-bold uppercase mb-1">
+                                            Mobile *
+                                        </label>
+
+                                        <input
+                                            type="tel"
+                                            name="mobile"
+                                            value={
+                                                form.mobile
+                                            }
+                                            onChange={
+                                                handleChange
+                                            }
+                                            placeholder="10 digit mobile"
+                                            maxLength={10}
+                                            className="w-full border rounded-lg px-3 py-3 outline-none focus:border-[#f95700]"
+                                            required
+                                        />
+
+                                    </div>
+
+                                </div>
+
+                                {/* PASSWORD */}
+
+                                <div className="grid grid-cols-2 gap-3">
+
+                                    <div>
+
+                                        <label className="block text-xs font-bold uppercase mb-1">
+                                            Password *
+                                        </label>
+
+                                        <input
+                                            type="password"
+                                            name="password"
+                                            value={
+                                                form.password
+                                            }
+                                            onChange={
+                                                handleChange
+                                            }
+                                            placeholder="Password"
+                                            className="w-full border rounded-lg px-3 py-3 outline-none focus:border-[#f95700]"
+                                            required
+                                        />
+
+                                    </div>
+
+                                    <div>
+
+                                        <label className="block text-xs font-bold uppercase mb-1">
+                                            Confirm *
+                                        </label>
+
+                                        <input
+                                            type="password"
+                                            name="confirmPassword"
+                                            value={
+                                                form.confirmPassword
+                                            }
+                                            onChange={
+                                                handleChange
+                                            }
+                                            placeholder="Confirm"
+                                            className="w-full border rounded-lg px-3 py-3 outline-none focus:border-[#f95700]"
+                                            required
+                                        />
+
+                                    </div>
+
+                                </div>
+
+                                {/* CAPTCHA */}
+
+                                <div>
+
+                                    <label className="block text-xs font-bold uppercase mb-1">
+                                        Security Code *
+                                    </label>
+
+                                    <div className="flex gap-2">
+
+                                        <input
+                                            value={
+                                                securityCode
+                                            }
+                                            onChange={(e) =>
+                                                setSecurityCode(
+                                                    e.target.value
+                                                )
+                                            }
+                                            maxLength={5}
+                                            placeholder="Enter code"
+                                            className="flex-1 border rounded-lg px-3 py-3 outline-none focus:border-[#f95700]"
+                                            required
+                                        />
+
+                                        <div className="w-28 bg-[#111827] rounded-lg flex items-center justify-center text-[#f95700] font-bold tracking-widest">
+                                            {captcha}
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={
+                                                generateCaptcha
+                                            }
+                                            className="w-11 border rounded-lg text-xl"
+                                        >
+                                            ↻
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                                {/* MESSAGE */}
+
+                                {message && (
+
+                                    <div
+                                        className={`p-3 rounded-lg text-sm ${
+                                            messageType === "success"
+                                                ? "bg-green-50 text-green-700 border border-green-200"
+                                                : "bg-red-50 text-red-600 border border-red-200"
+                                        }`}
+                                    >
+                                        {message}
+                                    </div>
+
+                                )}
+
+                                {/* BUTTON */}
+
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full bg-[#f95700] hover:bg-[#e04e00] text-white rounded-lg py-3 font-semibold disabled:opacity-60"
+                                >
+                                    {loading
+                                        ? "Creating Account..."
+                                        : form.role === "buyer"
+                                            ? "Create Buyer Account"
+                                            : "Create Farmer Account"}
+                                </button>
+
+                            </form>
+
+                            <div className="text-center mt-4">
+
+                                <Link
+                                    to="/login"
+                                    className="text-sm text-[#f95700] font-semibold hover:underline"
+                                >
+                                    Already registered? Sign in
+                                </Link>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </main>
+
+            {/* FOOTER */}
+
+            <footer className="bg-[#111827] border-t-2 border-[#f95700] text-center text-gray-400 text-xs py-4">
+                © 2026 Form2Feature. All rights reserved.
+            </footer>
+
         </div>
-      </footer>
-    </div>
-  );
+    );
 }
 
 export default Register;

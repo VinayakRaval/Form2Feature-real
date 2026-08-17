@@ -4,10 +4,75 @@ import { useNavigate, useParams } from "react-router-dom";
 import FarmerLayout from "../../layouts/FarmerLayout";
 
 import {
-    getMyCrops,
+    getCropById,
     updateCrop
 } from "../../services/cropService";
 
+// ============================================================
+// BACKEND URL
+// ============================================================
+
+const getBackendUrl = () => {
+
+    if (
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1"
+    ) {
+        return "http://localhost:5000";
+    }
+
+    // EC2 / Kubernetes / production
+    return window.location.origin;
+};
+
+// ============================================================
+// IMAGE URL
+// ============================================================
+
+const getImageUrl = (image) => {
+
+    if (!image) {
+        return null;
+    }
+
+    const cleanImage = String(image).trim();
+
+    if (!cleanImage) {
+        return null;
+    }
+
+    // Already a complete URL
+    if (
+        cleanImage.startsWith("http://") ||
+        cleanImage.startsWith("https://")
+    ) {
+        return cleanImage;
+    }
+
+    const backendUrl = getBackendUrl();
+
+    let imagePath = cleanImage;
+
+    // Remove leading slash
+    imagePath = imagePath.replace(/^\/+/, "");
+
+    // If backend already returned "uploads/..."
+    if (imagePath.startsWith("uploads/")) {
+        return `${backendUrl}/${imagePath}`;
+    }
+
+    // If backend returned "upload/..."
+    if (imagePath.startsWith("upload/")) {
+        return `${backendUrl}/${imagePath}`;
+    }
+
+    // Otherwise assume the image belongs inside uploads
+    return `${backendUrl}/uploads/${imagePath}`;
+};
+
+// ============================================================
+// COMPONENT
+// ============================================================
 
 function EditCrop() {
 
@@ -15,38 +80,56 @@ function EditCrop() {
 
     const { id } = useParams();
 
+    // ========================================================
+    // FORM STATE
+    // ========================================================
 
-    const [form, setForm] = useState({
+    const [formData, setFormData] = useState({
+
         crop_name: "",
         crop_variety: "",
         quantity: "",
         quantity_unit: "kg",
-        quality: "",
+        quality: "premium",
         expected_price: "",
         harvest_date: "",
-        description: "",
-        status: "available"
+        status: "available",
+        description: ""
+
     });
 
+    // ========================================================
+    // IMAGE STATE
+    // ========================================================
 
-    const [oldImage, setOldImage] = useState("");
+    const [currentImage, setCurrentImage] =
+        useState(null);
 
-    const [image, setImage] = useState(null);
+    const [newImage, setNewImage] =
+        useState(null);
 
-    const [preview, setPreview] = useState("");
+    const [newImagePreview, setNewImagePreview] =
+        useState(null);
 
-    const [loading, setLoading] = useState(true);
+    // ========================================================
+    // PAGE STATE
+    // ========================================================
 
-    const [saving, setSaving] = useState(false);
+    const [loading, setLoading] =
+        useState(true);
 
-    const [error, setError] = useState("");
+    const [saving, setSaving] =
+        useState(false);
 
-    const [message, setMessage] = useState("");
+    const [error, setError] =
+        useState("");
 
+    const [success, setSuccess] =
+        useState("");
 
-    // ==========================================
+    // ========================================================
     // LOAD CROP
-    // ==========================================
+    // ========================================================
 
     useEffect(() => {
 
@@ -55,38 +138,55 @@ function EditCrop() {
             try {
 
                 setLoading(true);
+                setError("");
+
+                console.log(
+                    "Loading crop:",
+                    id
+                );
 
                 const result =
-                    await getMyCrops();
+                    await getCropById(id);
 
+                console.log(
+                    "EDIT CROP RESPONSE:",
+                    result
+                );
 
-                if (!result.success) {
+                if (!result?.success) {
 
-                    throw new Error(
-                        result.message ||
-                        "Failed to load crops."
+                    setError(
+                        result?.message ||
+                        "Failed to load crop."
                     );
 
+                    return;
                 }
 
+                // Backend may return:
+                // result.crop
+                // result.data
+                // result.cropData
 
                 const crop =
-                    result.crops.find(
-                        item =>
-                            String(item.id) === String(id)
-                    );
-
+                    result.crop ||
+                    result.data ||
+                    result.cropData;
 
                 if (!crop) {
 
-                    throw new Error(
-                        "Crop not found."
+                    setError(
+                        "Crop information was not found."
                     );
 
+                    return;
                 }
 
+                // ==================================================
+                // SET FORM
+                // ==================================================
 
-                setForm({
+                setFormData({
 
                     crop_name:
                         crop.crop_name || "",
@@ -95,47 +195,73 @@ function EditCrop() {
                         crop.crop_variety || "",
 
                     quantity:
-                        crop.quantity || "",
+                        crop.quantity ?? "",
 
                     quantity_unit:
-                        crop.quantity_unit || "kg",
+                        crop.quantity_unit ||
+                        "kg",
 
                     quality:
-                        crop.quality || "",
+                        crop.quality ||
+                        "premium",
 
                     expected_price:
-                        crop.expected_price || "",
+                        crop.expected_price ?? "",
 
                     harvest_date:
                         crop.harvest_date
                             ? String(
-                                  crop.harvest_date
-                              ).slice(0, 10)
+                                crop.harvest_date
+                            ).substring(0, 10)
                             : "",
 
-                    description:
-                        crop.description || "",
-
                     status:
-                        crop.status || "available"
+                        crop.status ||
+                        "available",
+
+                    description:
+                        crop.description ||
+                        ""
 
                 });
 
+                // ==================================================
+                // CURRENT IMAGE
+                // ==================================================
 
-                setOldImage(
-                    crop.image || ""
+                const image =
+                    crop.image ||
+                    crop.image_url ||
+                    crop.image_path ||
+                    crop.crop_image ||
+                    null;
+
+                console.log(
+                    "CURRENT IMAGE FROM DATABASE:",
+                    image
                 );
 
+                const imageUrl =
+                    getImageUrl(image);
+
+                console.log(
+                    "FINAL IMAGE URL:",
+                    imageUrl
+                );
+
+                setCurrentImage(
+                    imageUrl
+                );
 
             } catch (err) {
 
                 console.error(
-                    "Load Crop Error:",
+                    "LOAD EDIT CROP ERROR:",
                     err
                 );
 
                 setError(
-                    err.message ||
+                    err.response?.data?.message ||
                     "Failed to load crop."
                 );
 
@@ -147,234 +273,269 @@ function EditCrop() {
 
         };
 
-
-        loadCrop();
+        if (id) {
+            loadCrop();
+        }
 
     }, [id]);
 
+    // ============================================================
+    // INPUT CHANGE
+    // ============================================================
 
-    // ==========================================
-    // HANDLE INPUT
-    // ==========================================
-
-    const handleChange = (e) => {
+    const handleChange = (event) => {
 
         const {
             name,
             value
-        } = e.target;
+        } = event.target;
 
-
-        setForm(previous => ({
-            ...previous,
-            [name]: value
-        }));
+        setFormData(
+            previous => ({
+                ...previous,
+                [name]: value
+            })
+        );
 
     };
 
+    // ============================================================
+    // IMAGE CHANGE
+    // ============================================================
 
-    // ==========================================
-    // HANDLE IMAGE
-    // ==========================================
-
-    const handleImage = (e) => {
+    const handleImageChange = (event) => {
 
         const file =
-            e.target.files?.[0];
-
+            event.target.files?.[0];
 
         if (!file) {
             return;
         }
 
-
-        const allowedTypes = [
-            "image/jpeg",
-            "image/jpg",
-            "image/png",
-            "image/webp"
-        ];
-
-
-        if (!allowedTypes.includes(file.type)) {
+        // Only image files
+        if (!file.type.startsWith("image/")) {
 
             setError(
-                "Only JPG, JPEG, PNG and WEBP images are allowed."
+                "Please select a valid image file."
             );
 
             return;
-
         }
 
-
+        // Maximum 5 MB
         if (file.size > 5 * 1024 * 1024) {
 
             setError(
-                "Image must be less than 5 MB."
+                "Image size must be less than 5 MB."
             );
 
             return;
-
         }
-
 
         setError("");
 
-        setImage(file);
+        setNewImage(file);
 
-        setPreview(
-            URL.createObjectURL(file)
+        const previewUrl =
+            URL.createObjectURL(file);
+
+        setNewImagePreview(
+            previewUrl
         );
 
     };
 
+    // ============================================================
+    // CLEAN PREVIEW URL
+    // ============================================================
 
-    // ==========================================
-    // IMAGE URL
-    // ==========================================
+    useEffect(() => {
 
-    const getImageUrl = (imagePath) => {
+        return () => {
 
-        if (!imagePath) {
-            return "";
-        }
+            if (newImagePreview) {
 
-
-        if (
-            imagePath.startsWith("http://") ||
-            imagePath.startsWith("https://")
-        ) {
-
-            return imagePath;
-
-        }
-
-
-        return `${window.location.origin}${imagePath}`;
-
-    };
-
-
-    // ==========================================
-    // SUBMIT
-    // ==========================================
-
-    const handleSubmit = async (e) => {
-
-        e.preventDefault();
-
-        setSaving(true);
-
-        setError("");
-
-        setMessage("");
-
-
-        try {
-
-            const formData =
-                new FormData();
-
-
-            formData.append(
-                "crop_name",
-                form.crop_name
-            );
-
-            formData.append(
-                "crop_variety",
-                form.crop_variety
-            );
-
-            formData.append(
-                "quantity",
-                form.quantity
-            );
-
-            formData.append(
-                "quantity_unit",
-                form.quantity_unit
-            );
-
-            formData.append(
-                "quality",
-                form.quality
-            );
-
-            formData.append(
-                "expected_price",
-                form.expected_price
-            );
-
-            formData.append(
-                "harvest_date",
-                form.harvest_date
-            );
-
-            formData.append(
-                "description",
-                form.description
-            );
-
-            formData.append(
-                "status",
-                form.status
-            );
-
-
-            // IMPORTANT:
-            // Must match cropRoutes.js
-            // cropUpload.single("image")
-
-            if (image) {
-
-                formData.append(
-                    "image",
-                    image
+                URL.revokeObjectURL(
+                    newImagePreview
                 );
 
             }
 
+        };
+
+    }, [newImagePreview]);
+
+    // ============================================================
+    // UPDATE CROP
+    // ============================================================
+
+    const handleSubmit = async (event) => {
+
+        event.preventDefault();
+
+        setError("");
+        setSuccess("");
+
+        // ========================================================
+        // VALIDATION
+        // ========================================================
+
+        if (
+            !formData.crop_name ||
+            !formData.crop_name.trim()
+        ) {
+
+            setError(
+                "Crop name is required."
+            );
+
+            return;
+        }
+
+        if (
+            formData.quantity === "" ||
+            Number(formData.quantity) <= 0
+        ) {
+
+            setError(
+                "Please enter a valid quantity."
+            );
+
+            return;
+        }
+
+        if (
+            formData.expected_price === "" ||
+            Number(formData.expected_price) < 0
+        ) {
+
+            setError(
+                "Please enter a valid expected price."
+            );
+
+            return;
+        }
+
+        try {
+
+            setSaving(true);
+
+            // ====================================================
+            // FORM DATA
+            // ====================================================
+
+            const data =
+                new FormData();
+
+            data.append(
+                "crop_name",
+                formData.crop_name.trim()
+            );
+
+            data.append(
+                "crop_variety",
+                formData.crop_variety.trim()
+            );
+
+            data.append(
+                "quantity",
+                formData.quantity
+            );
+
+            data.append(
+                "quantity_unit",
+                formData.quantity_unit
+            );
+
+            data.append(
+                "quality",
+                formData.quality
+            );
+
+            data.append(
+                "expected_price",
+                formData.expected_price
+            );
+
+            data.append(
+                "harvest_date",
+                formData.harvest_date
+            );
+
+            data.append(
+                "status",
+                formData.status
+            );
+
+            data.append(
+                "description",
+                formData.description
+            );
+
+            // ====================================================
+            // NEW IMAGE
+            // ====================================================
+
+            if (newImage) {
+
+                data.append(
+                    "image",
+                    newImage
+                );
+
+            }
+
+            console.log(
+                "UPDATING CROP:",
+                id
+            );
 
             const result =
                 await updateCrop(
                     id,
-                    formData
+                    data
                 );
 
+            console.log(
+                "UPDATE CROP RESPONSE:",
+                result
+            );
 
-            if (!result.success) {
+            if (!result?.success) {
 
-                throw new Error(
-                    result.message ||
+                setError(
+                    result?.message ||
                     "Failed to update crop."
                 );
 
+                return;
             }
 
-
-            setMessage(
-                "Crop updated successfully!"
+            setSuccess(
+                "Crop updated successfully."
             );
 
+            // ====================================================
+            // REDIRECT AFTER UPDATE
+            // ====================================================
 
             setTimeout(() => {
 
-                navigate("/farmer/crops");
+                navigate(
+                    "/farmer/crops"
+                );
 
-            }, 800);
-
+            }, 1000);
 
         } catch (err) {
 
             console.error(
-                "Update Crop Error:",
+                "UPDATE CROP ERROR:",
                 err
             );
 
             setError(
                 err.response?.data?.message ||
-                err.message ||
                 "Failed to update crop."
             );
 
@@ -386,10 +547,9 @@ function EditCrop() {
 
     };
 
-
-    // ==========================================
+    // ============================================================
     // LOADING
-    // ==========================================
+    // ============================================================
 
     if (loading) {
 
@@ -401,11 +561,11 @@ function EditCrop() {
 
                     <div className="text-center">
 
-                        <div className="w-10 h-10 border-4 border-gray-300 border-t-[#ff6500] rounded-full animate-spin mx-auto mb-4">
+                        <div className="w-12 h-12 border-4 border-gray-300 border-t-[#ff6500] rounded-full animate-spin mx-auto">
                         </div>
 
-                        <p className="text-gray-600">
-                            Loading crop...
+                        <p className="text-gray-600 mt-4">
+                            Loading crop information...
                         </p>
 
                     </div>
@@ -418,6 +578,9 @@ function EditCrop() {
 
     }
 
+    // ============================================================
+    // PAGE
+    // ============================================================
 
     return (
 
@@ -427,8 +590,9 @@ function EditCrop() {
 
                 <div className="max-w-4xl mx-auto">
 
-
-                    {/* HEADER */}
+                    {/* ==================================================
+                        HEADER
+                    ================================================== */}
 
                     <div className="mb-8">
 
@@ -436,7 +600,7 @@ function EditCrop() {
                             Crop Management
                         </p>
 
-                        <h1 className="text-4xl font-bold text-[#111827]">
+                        <h1 className="text-4xl font-bold text-[#111827] mt-1">
                             Edit Crop
                         </h1>
 
@@ -446,217 +610,236 @@ function EditCrop() {
 
                     </div>
 
+                    {/* ==================================================
+                        ERROR
+                    ================================================== */}
 
-                    {/* CARD */}
+                    {error && (
 
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 rounded-xl p-4">
 
-                        <div className="bg-[#111827] text-white px-7 py-6 border-b-4 border-[#ff6500]">
-
-                            <h2 className="text-2xl font-bold">
-                                Crop Information
-                            </h2>
+                            ⚠️ {error}
 
                         </div>
 
+                    )}
 
-                        <form
-                            onSubmit={handleSubmit}
-                            className="p-7 space-y-6"
-                        >
+                    {/* ==================================================
+                        SUCCESS
+                    ================================================== */}
 
+                    {success && (
 
-                            {/* CROP NAME */}
+                        <div className="mb-6 bg-green-50 border border-green-200 text-green-700 rounded-xl p-4">
+
+                            ✅ {success}
+
+                        </div>
+
+                    )}
+
+                    {/* ==================================================
+                        FORM
+                    ================================================== */}
+
+                    <form
+                        onSubmit={handleSubmit}
+                        className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-8"
+                    >
+
+                        <h2 className="text-2xl font-bold text-[#111827] mb-6">
+                            Crop Information
+                        </h2>
+
+                        {/* ==================================================
+                            CROP NAME
+                        ================================================== */}
+
+                        <div className="mb-5">
+
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Crop Name *
+                            </label>
+
+                            <input
+                                type="text"
+                                name="crop_name"
+                                value={formData.crop_name}
+                                onChange={handleChange}
+                                required
+                                className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:border-[#ff6500] focus:ring-2 focus:ring-orange-100"
+                            />
+
+                        </div>
+
+                        {/* ==================================================
+                            VARIETY
+                        ================================================== */}
+
+                        <div className="mb-5">
+
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Crop Variety
+                            </label>
+
+                            <input
+                                type="text"
+                                name="crop_variety"
+                                value={formData.crop_variety}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:border-[#ff6500] focus:ring-2 focus:ring-orange-100"
+                            />
+
+                        </div>
+
+                        {/* ==================================================
+                            QUANTITY + UNIT
+                        ================================================== */}
+
+                        <div className="grid md:grid-cols-2 gap-5 mb-5">
 
                             <div>
 
-                                <label className="form-label">
-                                    Crop Name *
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Quantity *
                                 </label>
 
                                 <input
-                                    type="text"
-                                    name="crop_name"
-                                    value={form.crop_name}
+                                    type="number"
+                                    name="quantity"
+                                    value={formData.quantity}
                                     onChange={handleChange}
-                                    className="form-input"
+                                    min="0"
+                                    step="0.01"
                                     required
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:border-[#ff6500] focus:ring-2 focus:ring-orange-100"
                                 />
 
                             </div>
 
+                            <div>
 
-                            {/* VARIETY */}
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Quantity Unit
+                                </label>
+
+                                <select
+                                    name="quantity_unit"
+                                    value={formData.quantity_unit}
+                                    onChange={handleChange}
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white outline-none focus:border-[#ff6500] focus:ring-2 focus:ring-orange-100"
+                                >
+
+                                    <option value="kg">
+                                        Kilogram (kg)
+                                    </option>
+
+                                    <option value="quintal">
+                                        Quintal
+                                    </option>
+
+                                    <option value="ton">
+                                        Ton
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                        </div>
+
+                        {/* ==================================================
+                            QUALITY + PRICE
+                        ================================================== */}
+
+                        <div className="grid md:grid-cols-2 gap-5 mb-5">
 
                             <div>
 
-                                <label className="form-label">
-                                    Crop Variety
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Quality
+                                </label>
+
+                                <select
+                                    name="quality"
+                                    value={formData.quality}
+                                    onChange={handleChange}
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white outline-none focus:border-[#ff6500] focus:ring-2 focus:ring-orange-100"
+                                >
+
+                                    <option value="premium">
+                                        Premium
+                                    </option>
+
+                                    <option value="good">
+                                        Good
+                                    </option>
+
+                                    <option value="average">
+                                        Average
+                                    </option>
+
+                                    <option value="poor">
+                                        Poor
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            <div>
+
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Expected Price ₹
                                 </label>
 
                                 <input
-                                    type="text"
-                                    name="crop_variety"
-                                    value={form.crop_variety}
+                                    type="number"
+                                    name="expected_price"
+                                    value={formData.expected_price}
                                     onChange={handleChange}
-                                    className="form-input"
-                                    placeholder="Example: Hybrid"
+                                    min="0"
+                                    step="0.01"
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:border-[#ff6500] focus:ring-2 focus:ring-orange-100"
                                 />
 
                             </div>
 
+                        </div>
 
-                            {/* QUANTITY */}
+                        {/* ==================================================
+                            HARVEST DATE + STATUS
+                        ================================================== */}
 
-                            <div className="grid md:grid-cols-2 gap-6">
-
-                                <div>
-
-                                    <label className="form-label">
-                                        Quantity *
-                                    </label>
-
-                                    <input
-                                        type="number"
-                                        name="quantity"
-                                        value={form.quantity}
-                                        onChange={handleChange}
-                                        min="0"
-                                        step="0.01"
-                                        className="form-input"
-                                        required
-                                    />
-
-                                </div>
-
-
-                                <div>
-
-                                    <label className="form-label">
-                                        Quantity Unit
-                                    </label>
-
-                                    <select
-                                        name="quantity_unit"
-                                        value={form.quantity_unit}
-                                        onChange={handleChange}
-                                        className="form-input"
-                                    >
-
-                                        <option value="kg">
-                                            Kilogram (kg)
-                                        </option>
-
-                                        <option value="quintal">
-                                            Quintal
-                                        </option>
-
-                                        <option value="ton">
-                                            Ton
-                                        </option>
-
-                                    </select>
-
-                                </div>
-
-                            </div>
-
-
-                            {/* QUALITY + PRICE */}
-
-                            <div className="grid md:grid-cols-2 gap-6">
-
-                                <div>
-
-                                    <label className="form-label">
-                                        Quality
-                                    </label>
-
-                                    <select
-                                        name="quality"
-                                        value={form.quality}
-                                        onChange={handleChange}
-                                        className="form-input"
-                                    >
-
-                                        <option value="">
-                                            Select quality
-                                        </option>
-
-                                        <option value="Premium">
-                                            Premium
-                                        </option>
-
-                                        <option value="Good">
-                                            Good
-                                        </option>
-
-                                        <option value="Average">
-                                            Average
-                                        </option>
-
-                                        <option value="Low">
-                                            Low
-                                        </option>
-
-                                    </select>
-
-                                </div>
-
-
-                                <div>
-
-                                    <label className="form-label">
-                                        Expected Price ₹
-                                    </label>
-
-                                    <input
-                                        type="number"
-                                        name="expected_price"
-                                        value={form.expected_price}
-                                        onChange={handleChange}
-                                        min="0"
-                                        step="0.01"
-                                        className="form-input"
-                                    />
-
-                                </div>
-
-                            </div>
-
-
-                            {/* HARVEST DATE */}
+                        <div className="grid md:grid-cols-2 gap-5 mb-5">
 
                             <div>
 
-                                <label className="form-label">
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
                                     Harvest Date
                                 </label>
 
                                 <input
                                     type="date"
                                     name="harvest_date"
-                                    value={form.harvest_date}
+                                    value={formData.harvest_date}
                                     onChange={handleChange}
-                                    className="form-input"
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:border-[#ff6500] focus:ring-2 focus:ring-orange-100"
                                 />
 
                             </div>
 
-
-                            {/* STATUS */}
-
                             <div>
 
-                                <label className="form-label">
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
                                     Status
                                 </label>
 
                                 <select
                                     name="status"
-                                    value={form.status}
+                                    value={formData.status}
                                     onChange={handleChange}
-                                    className="form-input"
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white outline-none focus:border-[#ff6500] focus:ring-2 focus:ring-orange-100"
                                 >
 
                                     <option value="available">
@@ -675,143 +858,176 @@ function EditCrop() {
 
                             </div>
 
+                        </div>
 
-                            {/* CURRENT IMAGE */}
+                        {/* ==================================================
+                            CURRENT IMAGE
+                        ================================================== */}
 
-                            {oldImage && !preview && (
+                        <div className="mb-6">
 
-                                <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Current Crop Image
+                            </label>
 
-                                    <label className="form-label">
-                                        Current Crop Image
-                                    </label>
+                            {currentImage ? (
+
+                                <div className="border border-gray-200 rounded-xl overflow-hidden bg-gray-100">
 
                                     <img
-                                        src={getImageUrl(oldImage)}
-                                        alt="Current crop"
-                                        className="w-48 h-48 object-cover rounded-xl border"
+                                        src={currentImage}
+                                        alt={
+                                            formData.crop_name ||
+                                            "Current crop"
+                                        }
+                                        className="w-full h-72 object-cover"
+                                        onLoad={() => {
+                                            console.log(
+                                                "Current crop image loaded:",
+                                                currentImage
+                                            );
+                                        }}
+                                        onError={(event) => {
+
+                                            console.error(
+                                                "CURRENT IMAGE FAILED:",
+                                                currentImage
+                                            );
+
+                                            event.currentTarget.style.display =
+                                                "none";
+                                        }}
+                                    />
+
+                                </div>
+
+                            ) : (
+
+                                <div className="h-48 rounded-xl bg-gray-100 flex flex-col items-center justify-center text-gray-400">
+
+                                    <span className="text-5xl">
+                                        🌾
+                                    </span>
+
+                                    <p className="mt-2">
+                                        No current crop image
+                                    </p>
+
+                                </div>
+
+                            )}
+
+                        </div>
+
+                        {/* ==================================================
+                            NEW IMAGE
+                        ================================================== */}
+
+                        <div className="mb-6">
+
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Change Crop Image
+                            </label>
+
+                            <input
+                                id="crop-image"
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageChange}
+                                className="hidden"
+                            />
+
+                            <label
+                                htmlFor="crop-image"
+                                className="inline-flex items-center gap-2 cursor-pointer border border-[#ff6500] text-[#ff6500] px-5 py-3 rounded-lg font-semibold hover:bg-orange-50 transition"
+                            >
+                                📷 Choose New Image
+                            </label>
+
+                            {newImage && (
+
+                                <p className="text-sm text-gray-600 mt-2">
+                                    Selected:{" "}
+                                    <strong>
+                                        {newImage.name}
+                                    </strong>
+                                </p>
+
+                            )}
+
+                            {newImagePreview && (
+
+                                <div className="mt-4">
+
+                                    <p className="text-sm font-semibold text-gray-700 mb-2">
+                                        New Image Preview
+                                    </p>
+
+                                    <img
+                                        src={newImagePreview}
+                                        alt="New crop preview"
+                                        className="w-full h-64 object-cover rounded-xl border"
                                     />
 
                                 </div>
 
                             )}
 
+                        </div>
 
-                            {/* NEW IMAGE */}
+                        {/* ==================================================
+                            DESCRIPTION
+                        ================================================== */}
 
-                            <div>
+                        <div className="mb-8">
 
-                                <label className="form-label">
-                                    Change Crop Image
-                                </label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Description
+                            </label>
 
-                                <input
-                                    id="crop-image"
-                                    type="file"
-                                    accept="image/jpeg,image/jpg,image/png,image/webp"
-                                    onChange={handleImage}
-                                    className="hidden"
-                                />
+                            <textarea
+                                name="description"
+                                value={formData.description}
+                                onChange={handleChange}
+                                rows="5"
+                                className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none resize-none focus:border-[#ff6500] focus:ring-2 focus:ring-orange-100"
+                                placeholder="Enter crop description..."
+                            />
 
-                                <label
-                                    htmlFor="crop-image"
-                                    className="inline-block cursor-pointer bg-[#ff6500] hover:bg-[#e85b00] text-white px-6 py-3 rounded-lg font-bold"
-                                >
-                                    📷 Choose New Image
-                                </label>
+                        </div>
 
+                        {/* ==================================================
+                            BUTTONS
+                        ================================================== */}
 
-                                {preview && (
+                        <div className="flex flex-col sm:flex-row gap-3">
 
-                                    <div className="mt-4">
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    navigate("/farmer/crops")
+                                }
+                                disabled={saving}
+                                className="flex-1 border border-gray-300 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-50 transition disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
 
-                                        <img
-                                            src={preview}
-                                            alt="New crop preview"
-                                            className="w-48 h-48 object-cover rounded-xl border"
-                                        />
+                            <button
+                                type="submit"
+                                disabled={saving}
+                                className="flex-1 bg-[#ff6500] hover:bg-[#e85b00] text-white py-3 rounded-lg font-bold transition disabled:opacity-60"
+                            >
 
-                                    </div>
+                                {saving
+                                    ? "Updating..."
+                                    : "💾 Update Crop"}
 
-                                )}
+                            </button>
 
-                            </div>
+                        </div>
 
-
-                            {/* DESCRIPTION */}
-
-                            <div>
-
-                                <label className="form-label">
-                                    Description
-                                </label>
-
-                                <textarea
-                                    name="description"
-                                    value={form.description}
-                                    onChange={handleChange}
-                                    rows="4"
-                                    className="form-input resize-y"
-                                    placeholder="Describe your crop..."
-                                />
-
-                            </div>
-
-
-                            {/* ERROR */}
-
-                            {error && (
-
-                                <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4">
-                                    {error}
-                                </div>
-
-                            )}
-
-
-                            {/* SUCCESS */}
-
-                            {message && (
-
-                                <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-4">
-                                    ✓ {message}
-                                </div>
-
-                            )}
-
-
-                            {/* BUTTONS */}
-
-                            <div className="flex justify-end gap-3 pt-4">
-
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        navigate("/farmer/crops")
-                                    }
-                                    className="border border-gray-300 px-6 py-3 rounded-lg font-semibold hover:bg-gray-50"
-                                >
-                                    Cancel
-                                </button>
-
-
-                                <button
-                                    type="submit"
-                                    disabled={saving}
-                                    className="bg-[#ff6500] hover:bg-[#e85b00] disabled:bg-gray-400 text-white px-8 py-3 rounded-lg font-bold"
-                                >
-
-                                    {saving
-                                        ? "Updating..."
-                                        : "💾 Update Crop"}
-
-                                </button>
-
-                            </div>
-
-                        </form>
-
-                    </div>
+                    </form>
 
                 </div>
 
@@ -822,6 +1038,5 @@ function EditCrop() {
     );
 
 }
-
 
 export default EditCrop;

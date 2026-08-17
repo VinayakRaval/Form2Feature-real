@@ -1,10 +1,11 @@
 import api from "./api";
 
 // ============================================================
-// SAVE PROFIT CALCULATION
+// SAVE
 // ============================================================
 
 export const saveProfitCalculation = async (data) => {
+
     const response = await api.post(
         "/profit-calculator",
         data
@@ -13,12 +14,12 @@ export const saveProfitCalculation = async (data) => {
     return response.data;
 };
 
-
 // ============================================================
-// GET SAVED PROFIT CALCULATIONS
+// GET SAVED PROFITS
 // ============================================================
 
 export const getProfitCalculations = async () => {
+
     const response = await api.get(
         "/profit-calculator"
     );
@@ -26,12 +27,12 @@ export const getProfitCalculations = async () => {
     return response.data;
 };
 
-
 // ============================================================
-// DELETE PROFIT CALCULATION
+// DELETE
 // ============================================================
 
 export const deleteProfitCalculation = async (id) => {
+
     const response = await api.delete(
         `/profit-calculator/${id}`
     );

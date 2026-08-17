@@ -4,12 +4,6 @@ const authenticate = (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
 
-        console.log("========== JWT DEBUG ==========");
-        console.log(
-            "Authorization header:",
-            authHeader ? "FOUND" : "MISSING"
-        );
-
         if (!authHeader) {
             return res.status(401).json({
                 success: false,
@@ -24,7 +18,9 @@ const authenticate = (req, res, next) => {
             });
         }
 
-        const token = authHeader.substring(7).trim();
+        const token = authHeader
+            .substring(7)
+            .trim();
 
         if (!token) {
             return res.status(401).json({
@@ -33,57 +29,35 @@ const authenticate = (req, res, next) => {
             });
         }
 
-        console.log(
-            "Token received:",
-            token.substring(0, 20) + "..."
-        );
+        if (!process.env.JWT_SECRET) {
+            console.error("JWT_SECRET is missing");
 
-        console.log(
-            "JWT_SECRET exists:",
-            !!process.env.JWT_SECRET
-        );
+            return res.status(500).json({
+                success: false,
+                message: "JWT configuration error"
+            });
+        }
 
         const decoded = jwt.verify(
             token,
             process.env.JWT_SECRET
         );
 
-        console.log(
-            "JWT decoded:",
-            decoded
-        );
-
         req.user = decoded;
 
         console.log(
-            "Authenticated user:",
+            "Authenticated:",
             req.user.id,
             req.user.role
-        );
-
-        console.log(
-            "================================"
         );
 
         next();
 
     } catch (error) {
-        console.error(
-            "========== JWT ERROR =========="
-        );
 
         console.error(
-            "Name:",
-            error.name
-        );
-
-        console.error(
-            "Message:",
+            "JWT ERROR:",
             error.message
-        );
-
-        console.error(
-            "================================"
         );
 
         return res.status(401).json({

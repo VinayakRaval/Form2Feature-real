@@ -2,8 +2,11 @@ const express = require("express");
 
 const router = express.Router();
 
-const authenticate = require("../middleware/authMiddleware");
-const authorizeRoles = require("../middleware/roleMiddleware");
+const authenticate =
+    require("../middleware/authMiddleware");
+
+const authorizeRoles =
+    require("../middleware/roleMiddleware");
 
 const {
     saveProfitCalculation,

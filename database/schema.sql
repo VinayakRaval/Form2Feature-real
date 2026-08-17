@@ -591,3 +591,86 @@ CREATE TABLE IF NOT EXISTS profit_calculations (
 
 ) ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4;
+
+USE form2feature;
+
+CREATE TABLE IF NOT EXISTS sales (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    farmer_id INT NOT NULL,
+
+    crop_id INT NULL,
+
+    crop_name VARCHAR(100) NOT NULL,
+
+    quantity DECIMAL(12,2) NOT NULL,
+
+    quantity_unit VARCHAR(30) NOT NULL DEFAULT 'kg',
+
+    selling_price DECIMAL(12,2) NOT NULL,
+
+    total_amount DECIMAL(14,2) NOT NULL,
+
+    buyer_name VARCHAR(150) NULL,
+
+    mandi_name VARCHAR(150) NULL,
+
+    sale_date DATE NOT NULL,
+
+    payment_status ENUM(
+        'paid',
+        'pending',
+        'partial'
+    ) NOT NULL DEFAULT 'pending',
+
+    notes TEXT NULL,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_sales_farmer
+        FOREIGN KEY (farmer_id)
+        REFERENCES farmers(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_sales_crop
+        FOREIGN KEY (crop_id)
+        REFERENCES crops(id)
+        ON DELETE SET NULL,
+
+    INDEX idx_sales_farmer (farmer_id),
+    INDEX idx_sales_crop (crop_id),
+    INDEX idx_sales_date (sale_date)
+);
+
+ALTER TABLE sales
+ADD COLUMN buyer_name VARCHAR(150) NULL AFTER mandi_id,
+ADD COLUMN payment_status ENUM('pending', 'paid', 'partial')
+    NOT NULL DEFAULT 'pending'
+    AFTER sale_date,
+ADD COLUMN notes TEXT NULL AFTER payment_status;
+
+ALTER TABLE users
+MODIFY COLUMN role
+ENUM('farmer', 'buyer', 'admin')
+NOT NULL DEFAULT 'farmer';
+
+CREATE TABLE buyer_profiles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE,
+    business_name VARCHAR(200) NULL,
+    buyer_type VARCHAR(50) DEFAULT 'Individual',
+    address TEXT NULL,
+    city VARCHAR(100) NULL,
+    state VARCHAR(100) NULL,
+    pincode VARCHAR(10) NULL,
+    gst_number VARCHAR(20) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_buyer_profile_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE
+);
+

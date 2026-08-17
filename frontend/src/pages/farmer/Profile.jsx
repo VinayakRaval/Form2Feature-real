@@ -11,17 +11,49 @@ import {
     updateFarmerProfile
 } from "../../services/farmerService";
 
+// ============================================================
+// BACKEND URL
+// ============================================================
+//
+// LOCAL
+// Frontend : http://localhost:5173
+// Backend  : http://localhost:5000
+//
+// EC2 / KUBERNETES
+// Frontend and backend are served through the same host.
+// ============================================================
 
-const BACKEND_URL = window.location.origin;
+const getBackendUrl = () => {
 
+    const hostname =
+        window.location.hostname;
+
+    // Local development
+    if (
+        hostname === "localhost" ||
+        hostname === "127.0.0.1"
+    ) {
+        return "http://localhost:5000";
+    }
+
+    // EC2 / Kubernetes / production
+    return window.location.origin;
+};
+
+
+// ============================================================
+// PROFILE
+// ============================================================
 
 function Profile() {
 
-    const fileInputRef = useRef(null);
+    const fileInputRef =
+        useRef(null);
 
-    // ==========================================
-    // PROFILE
-    // ==========================================
+
+    // ========================================================
+    // PROFILE STATE
+    // ========================================================
 
     const [profile, setProfile] = useState({
 
@@ -50,9 +82,9 @@ function Profile() {
     });
 
 
-    // ==========================================
-    // EDIT MODE
-    // ==========================================
+    // ========================================================
+    // EDIT STATE
+    // ========================================================
 
     const [isEditing, setIsEditing] =
         useState(false);
@@ -61,9 +93,9 @@ function Profile() {
         useState(null);
 
 
-    // ==========================================
-    // PHOTO
-    // ==========================================
+    // ========================================================
+    // PHOTO STATE
+    // ========================================================
 
     const [selectedPhoto, setSelectedPhoto] =
         useState(null);
@@ -78,17 +110,17 @@ function Profile() {
         useState(Date.now());
 
 
-    // ==========================================
+    // ========================================================
     // CROPS
-    // ==========================================
+    // ========================================================
 
     const [cropList, setCropList] =
         useState([]);
 
 
-    // ==========================================
+    // ========================================================
     // STATUS
-    // ==========================================
+    // ========================================================
 
     const [loading, setLoading] =
         useState(true);
@@ -103,9 +135,9 @@ function Profile() {
         useState("");
 
 
-    // ==========================================
+    // ========================================================
     // AVAILABLE CROPS
-    // ==========================================
+    // ========================================================
 
     const availableCrops = [
 
@@ -135,16 +167,15 @@ function Profile() {
     ];
 
 
-    // ==========================================
+    // ========================================================
     // LOAD PROFILE
-    // ==========================================
+    // ========================================================
 
     const loadProfile = async () => {
 
         try {
 
             setLoading(true);
-
             setError("");
 
             const result =
@@ -183,7 +214,6 @@ function Profile() {
                 mobile:
                     data.mobile || "",
 
-
                 address:
                     data.address || "",
 
@@ -200,26 +230,21 @@ function Profile() {
                 pincode:
                     data.pincode || "",
 
-
                 farm_size:
                     data.farm_size !== null &&
                     data.farm_size !== undefined
                         ? String(data.farm_size)
                         : "",
 
-
                 farm_size_unit:
                     data.farm_size_unit ||
                     "acre",
 
-
                 farming_type:
                     data.farming_type || "",
 
-
                 crops_grown:
                     data.crops_grown || "",
-
 
                 latitude:
                     data.latitude !== null &&
@@ -227,22 +252,25 @@ function Profile() {
                         ? String(data.latitude)
                         : "",
 
-
                 longitude:
                     data.longitude !== null &&
                     data.longitude !== undefined
                         ? String(data.longitude)
                         : "",
 
-
+                // IMPORTANT
+                // Support different backend field names.
                 profile_photo:
-                    data.profile_photo || ""
+                    data.profile_photo ||
+                    data.photo ||
+                    data.image ||
+                    ""
 
             };
 
 
             console.log(
-                "PROFILE PHOTO:",
+                "PROFILE PHOTO FROM BACKEND:",
                 loadedProfile.profile_photo
             );
 
@@ -257,24 +285,28 @@ function Profile() {
             );
 
 
-            // ==================================
+            // ==================================================
             // LOAD CROPS
-            // ==================================
+            // ==================================================
 
             if (
                 loadedProfile.crops_grown
             ) {
 
                 const crops =
-                    loadedProfile.crops_grown
+                    String(
+                        loadedProfile.crops_grown
+                    )
                         .split(",")
                         .map(
-                            (crop) =>
+                            crop =>
                                 crop.trim()
                         )
                         .filter(Boolean);
 
-                setCropList(crops);
+                setCropList(
+                    crops
+                );
 
             } else {
 
@@ -297,13 +329,11 @@ function Profile() {
                 err
             );
 
-
             setError(
                 err.response?.data?.message ||
                 err.message ||
                 "Failed to load farmer profile."
             );
-
 
         } finally {
 
@@ -314,9 +344,9 @@ function Profile() {
     };
 
 
-    // ==========================================
-    // LOAD ON PAGE OPEN
-    // ==========================================
+    // ========================================================
+    // LOAD PROFILE ON PAGE OPEN
+    // ========================================================
 
     useEffect(() => {
 
@@ -325,9 +355,9 @@ function Profile() {
     }, []);
 
 
-    // ==========================================
+    // ========================================================
     // EDIT
-    // ==========================================
+    // ========================================================
 
     const handleEdit = () => {
 
@@ -336,7 +366,6 @@ function Profile() {
         });
 
         setMessage("");
-
         setError("");
 
         setPhotoError(false);
@@ -346,9 +375,9 @@ function Profile() {
     };
 
 
-    // ==========================================
+    // ========================================================
     // CANCEL
-    // ==========================================
+    // ========================================================
 
     const handleCancel = () => {
 
@@ -363,14 +392,19 @@ function Profile() {
                 originalProfile.crops_grown
             ) {
 
-                setCropList(
-                    originalProfile.crops_grown
+                const crops =
+                    String(
+                        originalProfile.crops_grown
+                    )
                         .split(",")
                         .map(
-                            (crop) =>
+                            crop =>
                                 crop.trim()
                         )
-                        .filter(Boolean)
+                        .filter(Boolean);
+
+                setCropList(
+                    crops
                 );
 
             } else {
@@ -388,6 +422,7 @@ function Profile() {
 
         setPhotoError(false);
 
+
         if (fileInputRef.current) {
 
             fileInputRef.current.value =
@@ -397,7 +432,6 @@ function Profile() {
 
 
         setMessage("");
-
         setError("");
 
         setIsEditing(false);
@@ -405,9 +439,9 @@ function Profile() {
     };
 
 
-    // ==========================================
+    // ========================================================
     // INPUT CHANGE
-    // ==========================================
+    // ========================================================
 
     const handleChange = (e) => {
 
@@ -418,7 +452,7 @@ function Profile() {
 
 
         setProfile(
-            (previous) => ({
+            previous => ({
 
                 ...previous,
 
@@ -430,9 +464,9 @@ function Profile() {
     };
 
 
-    // ==========================================
+    // ========================================================
     // ADD CROP
-    // ==========================================
+    // ========================================================
 
     const handleAddCrop = (e) => {
 
@@ -461,7 +495,7 @@ function Profile() {
 
 
             setProfile(
-                (previous) => ({
+                previous => ({
 
                     ...previous,
 
@@ -479,41 +513,43 @@ function Profile() {
     };
 
 
-    // ==========================================
+    // ========================================================
     // REMOVE CROP
-    // ==========================================
+    // ========================================================
 
-    const handleRemoveCrop = (cropToRemove) => {
+    const handleRemoveCrop =
+        (cropToRemove) => {
 
-        const updatedCrops =
-            cropList.filter(
-                (crop) =>
-                    crop !== cropToRemove
+            const updatedCrops =
+                cropList.filter(
+                    crop =>
+                        crop !==
+                        cropToRemove
+                );
+
+
+            setCropList(
+                updatedCrops
             );
 
 
-        setCropList(
-            updatedCrops
-        );
+            setProfile(
+                previous => ({
+
+                    ...previous,
+
+                    crops_grown:
+                        updatedCrops.join(", ")
+
+                })
+            );
+
+        };
 
 
-        setProfile(
-            (previous) => ({
-
-                ...previous,
-
-                crops_grown:
-                    updatedCrops.join(", ")
-
-            })
-        );
-
-    };
-
-
-    // ==========================================
+    // ========================================================
     // PHOTO SELECT
-    // ==========================================
+    // ========================================================
 
     const handlePhotoChange = (e) => {
 
@@ -525,6 +561,10 @@ function Profile() {
             return;
         }
 
+
+        // ==================================================
+        // VALID FILE TYPE
+        // ==================================================
 
         const allowedTypes = [
 
@@ -546,10 +586,16 @@ function Profile() {
                 "Only JPG, JPEG, PNG and WEBP images are allowed."
             );
 
+            e.target.value = "";
+
             return;
 
         }
 
+
+        // ==================================================
+        // FILE SIZE
+        // ==================================================
 
         if (
             file.size >
@@ -560,6 +606,8 @@ function Profile() {
                 "Profile photo must be less than 5 MB."
             );
 
+            e.target.value = "";
+
             return;
 
         }
@@ -567,10 +615,16 @@ function Profile() {
 
         setError("");
 
+        setMessage("");
+
         setPhotoError(false);
 
         setSelectedPhoto(file);
 
+
+        // ==================================================
+        // CREATE PREVIEW
+        // ==================================================
 
         const objectUrl =
             URL.createObjectURL(file);
@@ -580,12 +634,28 @@ function Profile() {
             objectUrl
         );
 
+
+        console.log(
+            "SELECTED PROFILE PHOTO:",
+            file.name
+        );
+
+        console.log(
+            "PHOTO TYPE:",
+            file.type
+        );
+
+        console.log(
+            "PHOTO SIZE:",
+            file.size
+        );
+
     };
 
 
-    // ==========================================
-    // REMOVE NEW PHOTO
-    // ==========================================
+    // ========================================================
+    // REMOVE SELECTED PHOTO
+    // ========================================================
 
     const removeSelectedPhoto = () => {
 
@@ -606,14 +676,13 @@ function Profile() {
     };
 
 
-    // ==========================================
+    // ========================================================
     // GPS LOCATION
-    // ==========================================
+    // ========================================================
 
     const getLocation = () => {
 
         setMessage("");
-
         setError("");
 
 
@@ -632,7 +701,7 @@ function Profile() {
 
         navigator.geolocation.getCurrentPosition(
 
-            (position) => {
+            position => {
 
                 const latitude =
                     position.coords.latitude
@@ -644,12 +713,11 @@ function Profile() {
 
 
                 setProfile(
-                    (previous) => ({
+                    previous => ({
 
                         ...previous,
 
                         latitude,
-
                         longitude
 
                     })
@@ -662,8 +730,7 @@ function Profile() {
 
             },
 
-
-            (err) => {
+            err => {
 
                 console.error(
                     "GPS ERROR:",
@@ -676,7 +743,6 @@ function Profile() {
                 );
 
             },
-
 
             {
 
@@ -693,9 +759,9 @@ function Profile() {
     };
 
 
-    // ==========================================
+    // ========================================================
     // SAVE PROFILE
-    // ==========================================
+    // ========================================================
 
     const handleSubmit = async (e) => {
 
@@ -710,15 +776,14 @@ function Profile() {
         setSaving(true);
 
         setMessage("");
-
         setError("");
 
 
         try {
 
-            // ==================================
-            // CREATE FORMDATA
-            // ==================================
+            // ==================================================
+            // FORMDATA
+            // ==================================================
 
             const formData =
                 new FormData();
@@ -726,91 +791,85 @@ function Profile() {
 
             formData.append(
                 "full_name",
-                profile.full_name
+                profile.full_name || ""
             );
-
 
             formData.append(
                 "mobile",
-                profile.mobile
+                profile.mobile || ""
             );
-
 
             formData.append(
                 "address",
-                profile.address
+                profile.address || ""
             );
-
 
             formData.append(
                 "village",
-                profile.village
+                profile.village || ""
             );
-
 
             formData.append(
                 "district",
-                profile.district
+                profile.district || ""
             );
-
 
             formData.append(
                 "state",
-                profile.state
+                profile.state || "Karnataka"
             );
-
 
             formData.append(
                 "pincode",
-                profile.pincode
+                profile.pincode || ""
             );
-
 
             formData.append(
                 "farm_size",
-                profile.farm_size
+                profile.farm_size || ""
             );
-
 
             formData.append(
                 "farm_size_unit",
-                profile.farm_size_unit
+                profile.farm_size_unit || "acre"
             );
-
 
             formData.append(
                 "farming_type",
-                profile.farming_type
+                profile.farming_type || ""
             );
-
 
             formData.append(
                 "crops_grown",
                 cropList.join(", ")
             );
 
-
             formData.append(
                 "latitude",
-                profile.latitude
+                profile.latitude || ""
             );
-
 
             formData.append(
                 "longitude",
-                profile.longitude
+                profile.longitude || ""
             );
 
 
-            // ==================================
+            // ==================================================
             // PHOTO
-            // ==================================
+            // ==================================================
 
             if (selectedPhoto) {
 
+                console.log(
+                    "UPLOADING PROFILE PHOTO:",
+                    selectedPhoto.name
+                );
+
                 formData.append(
                     "profile_photo",
-                    selectedPhoto
+                    selectedPhoto,
+                    selectedPhoto.name
                 );
 
             }
@@ -828,7 +887,7 @@ function Profile() {
 
 
             console.log(
-                "UPDATE RESPONSE:",
+                "UPDATE PROFILE RESPONSE:",
                 result
             );
 
@@ -845,9 +904,9 @@ function Profile() {
             }
 
 
-            // ==================================
+            // ==================================================
             // SUCCESS
-            // ==================================
+            // ==================================================
 
             setMessage(
                 "Profile updated successfully!"
@@ -869,13 +928,15 @@ function Profile() {
             }
 
 
-            // ==================================
-            // LOAD UPDATED PROFILE
-            // ==================================
+            // ==================================================
+            // IMPORTANT
+            // RELOAD PROFILE FROM DATABASE
+            // ==================================================
 
             await loadProfile();
 
 
+            // Force image refresh
             setPhotoVersion(
                 Date.now()
             );
@@ -898,7 +959,6 @@ function Profile() {
                 "Failed to update farmer profile."
             );
 
-
         } finally {
 
             setSaving(false);
@@ -908,13 +968,16 @@ function Profile() {
     };
 
 
-    // ==========================================
-    // GET PHOTO URL
-    // ==========================================
+    // ========================================================
+    // PROFILE PHOTO URL
+    // ========================================================
 
     const getPhotoUrl = () => {
 
-        // New image preview
+        // ==================================================
+        // NEW SELECTED PHOTO
+        // ==================================================
+
         if (previewPhoto) {
 
             return previewPhoto;
@@ -922,7 +985,10 @@ function Profile() {
         }
 
 
-        // No database image
+        // ==================================================
+        // NO DATABASE PHOTO
+        // ==================================================
+
         if (
             !profile.profile_photo
         ) {
@@ -938,7 +1004,23 @@ function Profile() {
             ).trim();
 
 
-        // Already full URL
+        if (!photo) {
+            return "";
+        }
+
+
+        // ==================================================
+        // BACKEND URL
+        // ==================================================
+
+        const backendUrl =
+            getBackendUrl();
+
+
+        // ==================================================
+        // COMPLETE URL
+        // ==================================================
+
         if (
             photo.startsWith(
                 "http://"
@@ -948,59 +1030,128 @@ function Profile() {
             )
         ) {
 
-            return `${photo}?v=${photoVersion}`;
+            return (
+                `${photo}` +
+                `?v=${photoVersion}`
+            );
 
         }
 
 
-        // /uploads/profiles/...
+        // ==================================================
+        // REMOVE BACKSLASHES
+        // ==================================================
+
+        photo =
+            photo.replace(
+                /\\/g,
+                "/"
+            );
+
+
+        // ==================================================
+        // /uploads/...
+        // ==================================================
+
         if (
-            photo.startsWith("/")
+            photo.startsWith(
+                "/uploads/"
+            )
         ) {
 
-            return `${BACKEND_URL}${photo}?v=${photoVersion}`;
+            return (
+                `${backendUrl}${photo}` +
+                `?v=${photoVersion}`
+            );
 
         }
 
 
-        // uploads/profiles/...
+        // ==================================================
+        // uploads/...
+        // ==================================================
+
         if (
             photo.startsWith(
                 "uploads/"
             )
         ) {
 
-            return `${BACKEND_URL}/${photo}?v=${photoVersion}`;
+            return (
+                `${backendUrl}/${photo}` +
+                `?v=${photoVersion}`
+            );
 
         }
 
 
-        // filename only
-        return `${BACKEND_URL}/uploads/profiles/${photo}?v=${photoVersion}`;
+        // ==================================================
+        // /profiles/...
+        // ==================================================
+
+        if (
+            photo.startsWith(
+                "/profiles/"
+            )
+        ) {
+
+            return (
+                `${backendUrl}/uploads${photo}` +
+                `?v=${photoVersion}`
+            );
+
+        }
+
+
+        // ==================================================
+        // profiles/...
+        // ==================================================
+
+        if (
+            photo.startsWith(
+                "profiles/"
+            )
+        ) {
+
+            return (
+                `${backendUrl}/uploads/${photo}` +
+                `?v=${photoVersion}`
+            );
+
+        }
+
+
+        // ==================================================
+        // ONLY FILE NAME
+        // ==================================================
+
+        return (
+            `${backendUrl}/uploads/profiles/${photo}` +
+            `?v=${photoVersion}`
+        );
 
     };
 
 
-    // ==========================================
+    // ========================================================
     // PHOTO ERROR
-    // ==========================================
+    // ========================================================
 
     const handlePhotoError = () => {
 
         console.error(
-            "Unable to load profile photo:",
+            "PROFILE PHOTO FAILED:",
             getPhotoUrl()
         );
-
 
         setPhotoError(true);
 
     };
 
 
-    // ==========================================
+    // ========================================================
     // LOADING
-    // ==========================================
+    // ========================================================
 
     if (loading) {
 
@@ -1012,7 +1163,8 @@ function Profile() {
 
                     <div className="text-center">
 
-                        <div className="w-12 h-12 border-4 border-gray-300 border-t-[#ff6500] rounded-full animate-spin mx-auto mb-4"></div>
+                        <div className="w-12 h-12 border-4 border-gray-300 border-t-[#ff6500] rounded-full animate-spin mx-auto mb-4">
+                        </div>
 
                         <p className="text-gray-600 font-medium">
                             Loading profile...
@@ -1029,9 +1181,9 @@ function Profile() {
     }
 
 
-    // ==========================================
+    // ========================================================
     // PAGE
-    // ==========================================
+    // ========================================================
 
     return (
 
@@ -1041,10 +1193,9 @@ function Profile() {
 
                 <div className="max-w-6xl mx-auto">
 
-
-                    {/* ==================================
+                    {/* ==================================================
                         HEADER
-                    ================================== */}
+                    ================================================== */}
 
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5 mb-8">
 
@@ -1054,11 +1205,9 @@ function Profile() {
                                 Farmer Account
                             </p>
 
-
                             <h1 className="text-4xl font-bold text-[#111827]">
                                 My Profile
                             </h1>
-
 
                             <p className="text-gray-600 mt-2">
                                 {isEditing
@@ -1085,9 +1234,9 @@ function Profile() {
                     </div>
 
 
-                    {/* ==================================
+                    {/* ==================================================
                         SUCCESS
-                    ================================== */}
+                    ================================================== */}
 
                     {message && (
 
@@ -1100,9 +1249,9 @@ function Profile() {
                     )}
 
 
-                    {/* ==================================
+                    {/* ==================================================
                         ERROR
-                    ================================== */}
+                    ================================================== */}
 
                     {error && (
 
@@ -1120,10 +1269,9 @@ function Profile() {
                         className="space-y-6"
                     >
 
-
-                        {/* ==================================
+                        {/* ==================================================
                             PERSONAL DETAILS
-                        ================================== */}
+                        ================================================== */}
 
                         <section className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
 
@@ -1142,13 +1290,11 @@ function Profile() {
 
                             <div className="p-7">
 
-
-                                {/* ==================================
+                                {/* ==================================================
                                     PROFILE PHOTO
-                                ================================== */}
+                                ================================================== */}
 
                                 <div className="flex flex-col sm:flex-row items-center gap-7 pb-8 mb-8 border-b border-gray-200">
-
 
                                     <div className="w-36 h-36 rounded-full border-4 border-[#ff6500] bg-gray-100 overflow-hidden flex items-center justify-center flex-shrink-0">
 
@@ -1162,6 +1308,16 @@ function Profile() {
                                                 onError={
                                                     handlePhotoError
                                                 }
+                                                onLoad={() => {
+                                                    console.log(
+                                                        "PROFILE PHOTO LOADED:",
+                                                        getPhotoUrl()
+                                                    );
+
+                                                    setPhotoError(
+                                                        false
+                                                    );
+                                                }}
                                             />
 
                                         ) : (
@@ -1189,7 +1345,6 @@ function Profile() {
                                             Profile Photo
                                         </h3>
 
-
                                         <p className="text-gray-500 text-sm mt-1 mb-4">
                                             JPG, PNG or WEBP • Maximum 5 MB
                                         </p>
@@ -1200,9 +1355,7 @@ function Profile() {
                                             <>
 
                                                 <input
-                                                    ref={
-                                                        fileInputRef
-                                                    }
+                                                    ref={fileInputRef}
                                                     type="file"
                                                     accept="image/jpeg,image/jpg,image/png,image/webp"
                                                     onChange={
@@ -1260,12 +1413,11 @@ function Profile() {
                                 </div>
 
 
-                                {/* ==================================
-                                    NAME EMAIL MOBILE
-                                ================================== */}
+                                {/* ==================================================
+                                    PERSONAL INPUTS
+                                ================================================== */}
 
                                 <div className="grid md:grid-cols-2 gap-6">
-
 
                                     <div>
 
@@ -1347,9 +1499,9 @@ function Profile() {
                         </section>
 
 
-                        {/* ==================================
+                        {/* ==================================================
                             LOCATION DETAILS
-                        ================================== */}
+                        ================================================== */}
 
                         <section className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
 
@@ -1369,7 +1521,6 @@ function Profile() {
                             <div className="p-7">
 
                                 <div className="grid md:grid-cols-2 gap-6">
-
 
                                     <div className="md:col-span-2">
 
@@ -1535,9 +1686,9 @@ function Profile() {
                         </section>
 
 
-                        {/* ==================================
+                        {/* ==================================================
                             FARMING DETAILS
-                        ================================== */}
+                        ================================================== */}
 
                         <section className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
 
@@ -1557,9 +1708,6 @@ function Profile() {
                             <div className="p-7">
 
                                 <div className="grid md:grid-cols-2 gap-6">
-
-
-                                    {/* FARM SIZE */}
 
                                     <div>
 
@@ -1629,8 +1777,6 @@ function Profile() {
                                     </div>
 
 
-                                    {/* FARMING TYPE */}
-
                                     <div>
 
                                         <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -1684,8 +1830,6 @@ function Profile() {
                                     </div>
 
 
-                                    {/* CROPS */}
-
                                     <div className="md:col-span-2">
 
                                         <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -1709,13 +1853,13 @@ function Profile() {
 
                                                 {availableCrops
                                                     .filter(
-                                                        (crop) =>
+                                                        crop =>
                                                             !cropList.includes(
                                                                 crop
                                                             )
                                                     )
                                                     .map(
-                                                        (crop) => (
+                                                        crop => (
 
                                                             <option
                                                                 key={
@@ -1736,14 +1880,12 @@ function Profile() {
                                         )}
 
 
-                                        {/* SELECTED CROPS */}
-
                                         {cropList.length > 0 ? (
 
                                             <div className="flex flex-wrap gap-2 mb-4">
 
                                                 {cropList.map(
-                                                    (crop) => (
+                                                    crop => (
 
                                                         <div
                                                             key={
@@ -1791,8 +1933,6 @@ function Profile() {
                                         )}
 
 
-                                        {/* HIDDEN TEXT VALUE */}
-
                                         {!isEditing && (
 
                                             <div className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 min-h-[50px]">
@@ -1822,9 +1962,9 @@ function Profile() {
                         </section>
 
 
-                        {/* ==================================
+                        {/* ==================================================
                             GPS
-                        ================================== */}
+                        ================================================== */}
 
                         <section className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
 
@@ -1843,7 +1983,6 @@ function Profile() {
 
                             <div className="p-7">
 
-
                                 {isEditing && (
 
                                     <button
@@ -1860,7 +1999,6 @@ function Profile() {
 
 
                                 <div className="grid md:grid-cols-2 gap-6 mt-6">
-
 
                                     <div>
 
@@ -1937,9 +2075,9 @@ function Profile() {
                         </section>
 
 
-                        {/* ==================================
+                        {/* ==================================================
                             SAVE / CANCEL
-                        ================================== */}
+                        ================================================== */}
 
                         {isEditing && (
 
