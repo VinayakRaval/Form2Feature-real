@@ -7,7 +7,7 @@ const db = require("../config/db");
 
 const createDeal = async (req, res) => {
   try {
-    const buyerId = req.user.id;
+    const buyerId = Number(req.user.id);
 
     const {
       offer_id,
@@ -25,10 +25,7 @@ const createDeal = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------------
-    // Check if deal already exists
-    // --------------------------------------------------------
-
+    // Check duplicate deal
     const [existingDeals] = await db.query(
       `
       SELECT id
@@ -47,10 +44,6 @@ const createDeal = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------------
-    // Create deal
-    // --------------------------------------------------------
-
     const [result] = await db.query(
       `
       INSERT INTO deals
@@ -63,7 +56,7 @@ const createDeal = async (req, res) => {
         agreed_price,
         status
       )
-      VALUES (?, ?, ?, ?, ?, ?, 'accepted')
+      VALUES (?, ?, ?, ?, ?, ?, ?)
       `,
       [
         offer_id,
@@ -72,6 +65,7 @@ const createDeal = async (req, res) => {
         crop_id,
         quantity || 0,
         agreed_price || 0,
+        "accepted",
       ]
     );
 
@@ -98,7 +92,7 @@ const createDeal = async (req, res) => {
 
 const getBuyerDeals = async (req, res) => {
   try {
-    const buyerId = req.user.id;
+    const buyerId = Number(req.user.id);
 
     console.log("=================================");
     console.log("GET BUYER DEALS");
@@ -124,8 +118,22 @@ const getBuyerDeals = async (req, res) => {
         c.quantity_unit,
 
         COALESCE(
-          CONCAT(fp.first_name, ' ', fp.last_name),
-          CONCAT(u.first_name, ' ', u.last_name),
+          NULLIF(
+            CONCAT(
+              COALESCE(fp.first_name, ''),
+              ' ',
+              COALESCE(fp.last_name, '')
+            ),
+            ' '
+          ),
+          NULLIF(
+            CONCAT(
+              COALESCE(u.first_name, ''),
+              ' ',
+              COALESCE(u.last_name, '')
+            ),
+            ' '
+          ),
           u.name,
           'Farmer'
         ) AS farmer_name
@@ -148,14 +156,17 @@ const getBuyerDeals = async (req, res) => {
       [buyerId]
     );
 
-    console.log("BUYER DEALS:", rows.length);
+    console.log("BUYER DEALS FOUND:", rows.length);
 
     return res.status(200).json({
       success: true,
       deals: rows,
     });
   } catch (error) {
-    console.error("GET BUYER DEALS ERROR:", error);
+    console.error("=================================");
+    console.error("GET BUYER DEALS ERROR");
+    console.error(error);
+    console.error("=================================");
 
     return res.status(500).json({
       success: false,
@@ -172,7 +183,7 @@ const getBuyerDeals = async (req, res) => {
 
 const getFarmerDeals = async (req, res) => {
   try {
-    const farmerId = req.user.id;
+    const farmerId = Number(req.user.id);
 
     console.log("=================================");
     console.log("GET FARMER DEALS");
@@ -198,8 +209,22 @@ const getFarmerDeals = async (req, res) => {
         c.quantity_unit,
 
         COALESCE(
-          CONCAT(bp.first_name, ' ', bp.last_name),
-          CONCAT(u.first_name, ' ', u.last_name),
+          NULLIF(
+            CONCAT(
+              COALESCE(bp.first_name, ''),
+              ' ',
+              COALESCE(bp.last_name, '')
+            ),
+            ' '
+          ),
+          NULLIF(
+            CONCAT(
+              COALESCE(u.first_name, ''),
+              ' ',
+              COALESCE(u.last_name, '')
+            ),
+            ' '
+          ),
           u.name,
           'Buyer'
         ) AS buyer_name
@@ -222,7 +247,7 @@ const getFarmerDeals = async (req, res) => {
       [farmerId]
     );
 
-    console.log("FARMER DEALS:", rows.length);
+    console.log("FARMER DEALS FOUND:", rows.length);
 
     return res.status(200).json({
       success: true,
@@ -246,8 +271,8 @@ const getFarmerDeals = async (req, res) => {
 
 const getDealById = async (req, res) => {
   try {
-    const dealId = req.params.id;
-    const userId = req.user.id;
+    const dealId = Number(req.params.id);
+    const userId = Number(req.user.id);
     const role = req.user.role;
 
     const [rows] = await db.query(
@@ -260,13 +285,45 @@ const getDealById = async (req, res) => {
         c.quantity_unit,
 
         COALESCE(
-          CONCAT(bp.first_name, ' ', bp.last_name),
-          CONCAT(u.first_name, ' ', u.last_name)
+          NULLIF(
+            CONCAT(
+              COALESCE(bp.first_name, ''),
+              ' ',
+              COALESCE(bp.last_name, '')
+            ),
+            ' '
+          ),
+          NULLIF(
+            CONCAT(
+              COALESCE(u.first_name, ''),
+              ' ',
+              COALESCE(u.last_name, '')
+            ),
+            ' '
+          ),
+          u.name,
+          'Buyer'
         ) AS buyer_name,
 
         COALESCE(
-          CONCAT(fp.first_name, ' ', fp.last_name),
-          CONCAT(fu.first_name, ' ', fu.last_name)
+          NULLIF(
+            CONCAT(
+              COALESCE(fp.first_name, ''),
+              ' ',
+              COALESCE(fp.last_name, '')
+            ),
+            ' '
+          ),
+          NULLIF(
+            CONCAT(
+              COALESCE(fu.first_name, ''),
+              ' ',
+              COALESCE(fu.last_name, '')
+            ),
+            ' '
+          ),
+          fu.name,
+          'Farmer'
         ) AS farmer_name
 
       FROM deals d
@@ -287,6 +344,7 @@ const getDealById = async (req, res) => {
         ON fp.user_id = d.farmer_id
 
       WHERE d.id = ?
+
       LIMIT 1
       `,
       [dealId]
@@ -301,13 +359,9 @@ const getDealById = async (req, res) => {
 
     const deal = rows[0];
 
-    // --------------------------------------------------------
-    // Authorization
-    // --------------------------------------------------------
-
     if (
-      (role === "buyer" && deal.buyer_id !== userId) ||
-      (role === "farmer" && deal.farmer_id !== userId)
+      (role === "buyer" && Number(deal.buyer_id) !== userId) ||
+      (role === "farmer" && Number(deal.farmer_id) !== userId)
     ) {
       return res.status(403).json({
         success: false,
@@ -337,9 +391,8 @@ const getDealById = async (req, res) => {
 
 const updateDealStatus = async (req, res) => {
   try {
-    const dealId = req.params.id;
-    const userId = req.user.id;
-
+    const dealId = Number(req.params.id);
+    const userId = Number(req.user.id);
     const { status } = req.body;
 
     const allowedStatuses = [
@@ -378,8 +431,8 @@ const updateDealStatus = async (req, res) => {
     const deal = deals[0];
 
     if (
-      Number(deal.buyer_id) !== Number(userId) &&
-      Number(deal.farmer_id) !== Number(userId)
+      Number(deal.buyer_id) !== userId &&
+      Number(deal.farmer_id) !== userId
     ) {
       return res.status(403).json({
         success: false,

@@ -2,56 +2,62 @@ const express = require("express");
 
 const router = express.Router();
 
-const authenticate =
-    require("../middleware/authenticate");
-
-const authorizeRoles =
-    require("../middleware/roleMiddleware");
-
 const {
     createBuyerOffer,
+    getBuyerOffers,
     getMyBuyerOffers,
+    getBuyerOfferById,
+    updateBuyerOfferStatus,
     cancelBuyerOffer
 } = require("../controllers/buyerOfferController");
 
+const authMiddleware =
+    require("../middleware/authMiddleware");
 
 // ============================================================
-// GET MY OFFERS
-// GET /api/buyer/offers
+// BUYER OFFERS
 // ============================================================
 
-router.get(
-    "/",
-    authenticate,
-    authorizeRoles("buyer"),
-    getMyBuyerOffers
-);
-
-
-// ============================================================
-// CREATE OFFER
 // POST /api/buyer/offers
-// ============================================================
-
 router.post(
     "/",
-    authenticate,
-    authorizeRoles("buyer"),
+    authMiddleware,
     createBuyerOffer
 );
 
-
-// ============================================================
-// CANCEL OFFER
-// PATCH /api/buyer/offers/:id/cancel
-// ============================================================
-
-router.patch(
-    "/:id/cancel",
-    authenticate,
-    authorizeRoles("buyer"),
-    cancelBuyerOffer
+// GET /api/buyer/offers
+router.get(
+    "/",
+    authMiddleware,
+    getBuyerOffers
 );
 
+// GET /api/buyer/offers/my
+router.get(
+    "/my",
+    authMiddleware,
+    getMyBuyerOffers
+);
+
+// GET /api/buyer/offers/:id
+router.get(
+    "/:id",
+    authMiddleware,
+    getBuyerOfferById
+);
+
+// PATCH /api/buyer/offers/:id/status
+router.patch(
+    "/:id/status",
+    authMiddleware,
+    updateBuyerOfferStatus
+);
+
+// PATCH /api/buyer/offers/:id/cancel
+router.patch(
+    "/:id/cancel",
+    authMiddleware,
+    cancelBuyerOffer
+);
 
 module.exports = router;

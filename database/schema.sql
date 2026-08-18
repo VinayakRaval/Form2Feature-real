@@ -877,3 +877,37 @@ CREATE TABLE IF NOT EXISTS deals (
         crop_id
     )
 );
+
+CREATE TABLE if not exists deals (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    offer_id INT NOT NULL,
+    buyer_id INT NOT NULL,
+    farmer_id INT NOT NULL,
+    crop_id INT NOT NULL,
+
+    quantity DECIMAL(12,2) NOT NULL DEFAULT 0,
+    agreed_price DECIMAL(12,2) NOT NULL DEFAULT 0,
+
+    message TEXT NULL,
+
+    status ENUM(
+        'accepted',
+        'payment_pending',
+        'paid',
+        'completed',
+        'cancelled'
+    ) NOT NULL DEFAULT 'accepted',
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP
+);
+
+ALTER TABLE deals
+ADD COLUMN message TEXT NULL AFTER agreed_price;
+
+ALTER TABLE deals
+MODIFY updated_at TIMESTAMP
+DEFAULT CURRENT_TIMESTAMP
+ON UPDATE CURRENT_TIMESTAMP;
