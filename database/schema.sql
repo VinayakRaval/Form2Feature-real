@@ -674,3 +674,206 @@ CREATE TABLE buyer_profiles (
         ON DELETE CASCADE
 );
 
+CREATE TABLE buyer_offers (
+    id INT(11) NOT NULL AUTO_INCREMENT,
+
+    buyer_id INT(11) NOT NULL,
+    crop_id INT(11) NOT NULL,
+
+    offered_price DECIMAL(12,2) NOT NULL,
+    quantity DECIMAL(12,2) NOT NULL,
+
+    message TEXT NULL,
+
+    status ENUM(
+        'pending',
+        'accepted',
+        'rejected',
+        'cancelled'
+    ) DEFAULT 'pending',
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id),
+
+    INDEX buyer_id (buyer_id),
+    INDEX crop_id (crop_id),
+
+    CONSTRAINT fk_buyer_offer_buyer
+        FOREIGN KEY (buyer_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_buyer_offer_crop
+        FOREIGN KEY (crop_id)
+        REFERENCES crops(id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE deals (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    offer_id INT NOT NULL,
+    buyer_id INT NOT NULL,
+    farmer_id INT NOT NULL,
+    crop_id INT NOT NULL,
+    quantity DECIMAL(12,2) NOT NULL,
+    agreed_price DECIMAL(12,2) NOT NULL,
+    status ENUM(
+        'accepted',
+        'payment_pending',
+        'paid',
+        'completed',
+        'cancelled'
+    ) DEFAULT 'accepted',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS deals (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    offer_id INT NOT NULL,
+    buyer_id INT NOT NULL,
+    farmer_id INT NOT NULL,
+    crop_id INT NOT NULL,
+
+    quantity DECIMAL(12,2) NOT NULL,
+    agreed_price DECIMAL(12,2) NOT NULL,
+
+    status ENUM(
+        'accepted',
+        'payment_pending',
+        'paid',
+        'completed',
+        'cancelled'
+    ) DEFAULT 'accepted',
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    INDEX (offer_id),
+    INDEX (buyer_id),
+    INDEX (farmer_id),
+    INDEX (crop_id)
+);
+
+CREATE TABLE IF NOT EXISTS deals (
+    id INT(11) NOT NULL AUTO_INCREMENT,
+    offer_id INT(11) NOT NULL,
+    buyer_id INT(11) NOT NULL,
+    farmer_id INT(11) NOT NULL,
+    crop_id INT(11) NOT NULL,
+    quantity DECIMAL(12,2) NOT NULL,
+    agreed_price DECIMAL(12,2) NOT NULL,
+    message TEXT NULL,
+    status ENUM('active','completed','cancelled') DEFAULT 'active',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id),
+
+    KEY offer_id (offer_id),
+    KEY buyer_id (buyer_id),
+    KEY farmer_id (farmer_id),
+    KEY crop_id (crop_id)
+);
+
+USE form2feature;
+
+CREATE TABLE IF NOT EXISTS deals (
+    id INT(11) NOT NULL AUTO_INCREMENT,
+    offer_id INT(11) NOT NULL,
+    buyer_id INT(11) NOT NULL,
+    farmer_id INT(11) NOT NULL,
+    crop_id INT(11) NOT NULL,
+
+    quantity DECIMAL(12,2) NOT NULL,
+    agreed_price DECIMAL(12,2) NOT NULL,
+    total_amount DECIMAL(12,2) NOT NULL,
+
+    status ENUM(
+        'active',
+        'confirmed',
+        'completed',
+        'cancelled'
+    ) DEFAULT 'active',
+
+    delivery_status ENUM(
+        'pending',
+        'processing',
+        'shipped',
+        'delivered'
+    ) DEFAULT 'pending',
+
+    payment_status ENUM(
+        'pending',
+        'paid',
+        'failed'
+    ) DEFAULT 'pending',
+
+    buyer_message TEXT NULL,
+    farmer_message TEXT NULL,
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id),
+
+    INDEX (offer_id),
+    INDEX (buyer_id),
+    INDEX (farmer_id),
+    INDEX (crop_id)
+);
+
+USE form2feature;
+
+CREATE TABLE IF NOT EXISTS deals (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    offer_id INT NOT NULL,
+
+    buyer_id INT NOT NULL,
+
+    farmer_id INT NOT NULL,
+
+    crop_id INT NOT NULL,
+
+    quantity DECIMAL(12,2) NOT NULL DEFAULT 0,
+
+    agreed_price DECIMAL(12,2) NOT NULL DEFAULT 0,
+
+    message TEXT NULL,
+
+    status ENUM(
+        'active',
+        'completed',
+        'cancelled'
+    ) DEFAULT 'active',
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    INDEX idx_deals_offer (
+        offer_id
+    ),
+
+    INDEX idx_deals_buyer (
+        buyer_id
+    ),
+
+    INDEX idx_deals_farmer (
+        farmer_id
+    ),
+
+    INDEX idx_deals_crop (
+        crop_id
+    )
+);

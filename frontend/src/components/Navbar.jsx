@@ -25,6 +25,7 @@ const Icon = ({
     };
 
     switch (name) {
+
         case "dashboard":
             return (
                 <svg {...props}>
@@ -133,6 +134,19 @@ const Icon = ({
                 </svg>
             );
 
+        case "offer":
+            return (
+                <svg {...props}>
+                    <path d="M4 12l4-4 4 4" />
+                    <path d="M20 12l-4-4-4 4" />
+                    <path d="M8 8h8" />
+                    <path d="M7 12l3 3c.8.8 2.2.8 3 0l1-1" />
+                    <path d="M17 12l-3 3" />
+                    <path d="M5 17l2 2" />
+                    <path d="M19 17l-2 2" />
+                </svg>
+            );
+
         case "logout":
             return (
                 <svg {...props}>
@@ -147,8 +161,8 @@ const Icon = ({
                 <svg {...props}>
                     <circle cx="12" cy="12" r="9" />
                     <path d="M3 12h18" />
-                    <path d="M12 3c3 3 4.5 6 4.5 9s-1.5 6-4.5 9" />
-                    <path d="M12 3c-3 3-4.5 6-4.5 9s1.5 6-4.5 9" />
+                    <path d="M12 3c2.5 2.7 4 5.7 4 9s-1.5 6.3-4 9" />
+                    <path d="M12 3c-2.5 2.7-4 5.7-4 9s1.5 6.3 4 9" />
                 </svg>
             );
 
@@ -175,10 +189,11 @@ const Icon = ({
 };
 
 // ============================================================
-// NAVBAR
+// FARMER NAVBAR
 // ============================================================
 
 function Navbar() {
+
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -215,9 +230,12 @@ function Navbar() {
     // ========================================================
 
     const handleSkipToContent = () => {
-        const element = document.getElementById("main-content");
+
+        const element =
+            document.getElementById("main-content");
 
         if (element) {
+
             element.focus();
 
             element.scrollIntoView({
@@ -232,7 +250,15 @@ function Navbar() {
     // ========================================================
 
     const isActive = (path) => {
-        return location.pathname === path;
+
+        if (path === "/farmer/dashboard") {
+            return location.pathname === path;
+        }
+
+        return (
+            location.pathname === path ||
+            location.pathname.startsWith(`${path}/`)
+        );
     };
 
     // ========================================================
@@ -240,6 +266,7 @@ function Navbar() {
     // ========================================================
 
     const navClass = (path) => {
+
         return `
             inline-flex
             items-center
@@ -266,6 +293,7 @@ function Navbar() {
     // ========================================================
 
     const mobileNavClass = (path) => {
+
         return `
             inline-flex
             items-center
@@ -290,51 +318,89 @@ function Navbar() {
     // ========================================================
 
     const navigationItems = [
+
         {
             path: "/farmer/dashboard",
             label: "Dashboard",
             icon: "dashboard"
         },
+
         {
             path: "/farmer/profile",
             label: "Profile",
             icon: "profile"
         },
+
         {
             path: "/farmer/crops",
             label: "My Crops",
             icon: "crops"
         },
+
         {
             path: "/farmer/mandi",
             label: "Mandi Finder",
             icon: "market"
         },
+
         {
             path: "/farmer/saved-mandis",
             label: "Saved Mandis",
             icon: "star"
         },
+
         {
             path: "/farmer/market-prices",
             label: "Market Prices",
             icon: "money"
         },
+
         {
             path: "/farmer/profit",
             label: "Profit Calculator",
             icon: "chart"
         },
+
         {
             path: "/farmer/profit-history",
             label: "Saved Profits",
             icon: "saved"
         },
+
+        // ====================================================
+        // BUYER OFFERS
+        // ====================================================
+
+        {
+            path: "/farmer/offers",
+            label: "Buyer Offers",
+            icon: "offer"
+        },
+
+        // ====================================================
+        // FARMER DEALS
+        // ====================================================
+
+        {
+            path: "/farmer/deals",
+            label: "Deals",
+            icon: "offer"
+        },
+
+        // ====================================================
+        // SALES
+        // ====================================================
+
         {
             path: "/farmer/sales",
             label: "Sales & Transactions",
             icon: "sales"
         },
+
+        // ====================================================
+        // GOVERNMENT SCHEMES
+        // ====================================================
+
         {
             path: "/farmer/government-schemes",
             label: "Government Schemes",
@@ -349,47 +415,98 @@ function Navbar() {
             ================================================== */}
 
             <div className="bg-[#030712] text-white">
-                <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="min-h-[40px] flex items-center justify-between gap-4 text-sm">
 
-                        <div className="flex items-center gap-4 sm:gap-5 min-w-0">
+                <div className="
+                    max-w-[1500px]
+                    mx-auto
+                    px-4
+                    sm:px-6
+                    lg:px-8
+                ">
+
+                    <div className="
+                        min-h-[40px]
+                        flex
+                        items-center
+                        justify-between
+                        gap-4
+                        text-sm
+                    ">
+
+                        <div className="
+                            flex
+                            items-center
+                            gap-4
+                            sm:gap-5
+                            min-w-0
+                        ">
 
                             <button
                                 type="button"
                                 onClick={handleSkipToContent}
-                                className="hover:text-gray-300 transition whitespace-nowrap"
+                                className="
+                                    hover:text-gray-300
+                                    transition
+                                    whitespace-nowrap
+                                "
                             >
                                 Skip to main content
                             </button>
 
-                            <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                            <span className="
+                                inline-flex
+                                items-center
+                                gap-1.5
+                                whitespace-nowrap
+                            ">
                                 <Icon
                                     name="language"
                                     size={15}
                                 />
+
                                 English
                             </span>
 
-                            <span className="hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap">
+                            <span className="
+                                hidden
+                                sm:inline-flex
+                                items-center
+                                gap-1.5
+                                whitespace-nowrap
+                            ">
                                 <Icon
                                     name="contact"
                                     size={15}
                                 />
+
                                 Contact us
                             </span>
 
-                            <span className="hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap">
+                            <span className="
+                                hidden
+                                sm:inline-flex
+                                items-center
+                                gap-1.5
+                                whitespace-nowrap
+                            ">
                                 <Icon
                                     name="help"
                                     size={15}
                                 />
+
                                 Help
                             </span>
+
                         </div>
 
-                        <span className="hidden md:block whitespace-nowrap">
+                        <span className="
+                            hidden
+                            md:block
+                            whitespace-nowrap
+                        ">
                             Smart Agriculture Platform
                         </span>
+
                     </div>
                 </div>
             </div>
@@ -398,15 +515,34 @@ function Navbar() {
                 MAIN NAVBAR
             ================================================== */}
 
-            <nav className="bg-white border-b border-gray-300 shadow-sm relative z-50">
+            <nav className="
+                bg-white
+                border-b
+                border-gray-300
+                shadow-sm
+                relative
+                z-50
+            ">
 
-                <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="
+                    max-w-[1500px]
+                    mx-auto
+                    px-4
+                    sm:px-6
+                    lg:px-8
+                ">
 
                     {/* ==================================================
                         FIRST ROW
                     ================================================== */}
 
-                    <div className="min-h-[72px] flex items-center justify-between gap-5">
+                    <div className="
+                        min-h-[72px]
+                        flex
+                        items-center
+                        justify-between
+                        gap-5
+                    ">
 
                         {/* LOGO */}
 
@@ -428,9 +564,19 @@ function Navbar() {
 
                         {/* USER + LOGOUT */}
 
-                        <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="
+                            flex
+                            items-center
+                            gap-3
+                            sm:gap-4
+                        ">
 
-                            <div className="hidden sm:block text-right leading-tight">
+                            <div className="
+                                hidden
+                                sm:block
+                                text-right
+                                leading-tight
+                            ">
 
                                 <p
                                     className="
@@ -446,7 +592,10 @@ function Navbar() {
                                     {userName}
                                 </p>
 
-                                <p className="text-xs text-gray-500">
+                                <p className="
+                                    text-xs
+                                    text-gray-500
+                                ">
                                     Farmer
                                 </p>
 
@@ -474,14 +623,14 @@ function Navbar() {
                                     whitespace-nowrap
                                 "
                             >
+
                                 <Icon
                                     name="logout"
                                     size={17}
                                 />
 
-                                <span>
-                                    Sign out
-                                </span>
+                                Sign out
+
                             </button>
 
                         </div>
@@ -491,33 +640,37 @@ function Navbar() {
                         DESKTOP NAVIGATION
                     ================================================== */}
 
-                    <div className="hidden lg:block border-t border-gray-100">
+                    <div className="
+                        hidden
+                        lg:block
+                        border-t
+                        border-gray-100
+                    ">
 
-                        <div
-                            className="
-                                flex
-                                items-center
-                                justify-start
-                                gap-1
-                                py-2
-                                overflow-x-auto
-                                overflow-y-hidden
-                                whitespace-nowrap
-                                scrollbar-thin
-                                scrollbar-thumb-gray-300
-                            "
-                        >
+                        <div className="
+                            flex
+                            items-center
+                            justify-start
+                            gap-1
+                            py-2
+                            overflow-x-auto
+                            overflow-y-hidden
+                            whitespace-nowrap
+                        ">
 
                             {/* DASHBOARD */}
 
                             <Link
                                 to="/farmer/dashboard"
-                                className={navClass("/farmer/dashboard")}
+                                className={navClass(
+                                    "/farmer/dashboard"
+                                )}
                             >
                                 <Icon
                                     name="dashboard"
                                     size={17}
                                 />
+
                                 Dashboard
                             </Link>
 
@@ -525,12 +678,15 @@ function Navbar() {
 
                             <Link
                                 to="/farmer/profile"
-                                className={navClass("/farmer/profile")}
+                                className={navClass(
+                                    "/farmer/profile"
+                                )}
                             >
                                 <Icon
                                     name="profile"
                                     size={17}
                                 />
+
                                 Profile
                             </Link>
 
@@ -538,12 +694,15 @@ function Navbar() {
 
                             <Link
                                 to="/farmer/crops"
-                                className={navClass("/farmer/crops")}
+                                className={navClass(
+                                    "/farmer/crops"
+                                )}
                             >
                                 <Icon
                                     name="crops"
                                     size={17}
                                 />
+
                                 My Crops
                             </Link>
 
@@ -572,19 +731,23 @@ function Navbar() {
                                     transition
                                 "
                             >
+
                                 <Icon
                                     name="plus"
                                     size={16}
                                 />
 
                                 Add Crop
+
                             </Link>
 
                             {/* MANDI FINDER */}
 
                             <Link
                                 to="/farmer/mandi"
-                                className={navClass("/farmer/mandi")}
+                                className={navClass(
+                                    "/farmer/mandi"
+                                )}
                             >
                                 <Icon
                                     name="market"
@@ -598,7 +761,9 @@ function Navbar() {
 
                             <Link
                                 to="/farmer/saved-mandis"
-                                className={navClass("/farmer/saved-mandis")}
+                                className={navClass(
+                                    "/farmer/saved-mandis"
+                                )}
                             >
                                 <Icon
                                     name="star"
@@ -612,7 +777,9 @@ function Navbar() {
 
                             <Link
                                 to="/farmer/market-prices"
-                                className={navClass("/farmer/market-prices")}
+                                className={navClass(
+                                    "/farmer/market-prices"
+                                )}
                             >
                                 <Icon
                                     name="money"
@@ -626,7 +793,9 @@ function Navbar() {
 
                             <Link
                                 to="/farmer/profit"
-                                className={navClass("/farmer/profit")}
+                                className={navClass(
+                                    "/farmer/profit"
+                                )}
                             >
                                 <Icon
                                     name="chart"
@@ -640,7 +809,9 @@ function Navbar() {
 
                             <Link
                                 to="/farmer/profit-history"
-                                className={navClass("/farmer/profit-history")}
+                                className={navClass(
+                                    "/farmer/profit-history"
+                                )}
                             >
                                 <Icon
                                     name="saved"
@@ -650,11 +821,49 @@ function Navbar() {
                                 Saved Profits
                             </Link>
 
+                            {/* ==================================================
+                                BUYER OFFERS
+                            ================================================== */}
+
+                            <Link
+                                to="/farmer/offers"
+                                className={navClass(
+                                    "/farmer/offers"
+                                )}
+                            >
+                                <Icon
+                                    name="offer"
+                                    size={17}
+                                />
+
+                                Buyer Offers
+                            </Link>
+
+                            {/* ==================================================
+                                FARMER DEALS - NEW
+                            ================================================== */}
+
+                            <Link
+                                to="/farmer/deals"
+                                className={navClass(
+                                    "/farmer/deals"
+                                )}
+                            >
+                                <Icon
+                                    name="offer"
+                                    size={17}
+                                />
+
+                                Deals
+                            </Link>
+
                             {/* SALES */}
 
                             <Link
                                 to="/farmer/sales"
-                                className={navClass("/farmer/sales")}
+                                className={navClass(
+                                    "/farmer/sales"
+                                )}
                             >
                                 <Icon
                                     name="sales"
@@ -668,7 +877,9 @@ function Navbar() {
 
                             <Link
                                 to="/farmer/government-schemes"
-                                className={navClass("/farmer/government-schemes")}
+                                className={navClass(
+                                    "/farmer/government-schemes"
+                                )}
                             >
                                 <Icon
                                     name="government"
@@ -685,43 +896,69 @@ function Navbar() {
                         MOBILE / TABLET NAVIGATION
                     ================================================== */}
 
-                    <div className="lg:hidden border-t border-gray-200 py-4">
+                    <div className="
+                        lg:hidden
+                        border-t
+                        border-gray-200
+                        py-4
+                    ">
 
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="
+                            flex
+                            flex-wrap
+                            items-center
+                            gap-2
+                        ">
 
                             {navigationItems.map((item) => (
+
                                 <Link
                                     key={item.path}
                                     to={item.path}
-                                    className={mobileNavClass(item.path)}
+                                    className={mobileNavClass(
+                                        item.path
+                                    )}
                                 >
+
                                     <Icon
                                         name={item.icon}
                                         size={16}
                                     />
 
                                     {item.label}
+
                                 </Link>
+
                             ))}
 
                             {/* MOBILE USER */}
 
-                            <div className="w-full flex items-center justify-between border-t border-gray-200 pt-3 mt-2">
+                            <div className="
+                                w-full
+                                flex
+                                items-center
+                                justify-between
+                                border-t
+                                border-gray-200
+                                pt-3
+                                mt-2
+                            ">
 
                                 <div className="min-w-0">
 
-                                    <p
-                                        className="
-                                            text-sm
-                                            font-bold
-                                            text-gray-900
-                                            truncate
-                                        "
-                                    >
+                                    <p className="
+                                        text-sm
+                                        font-bold
+                                        text-gray-900
+                                        truncate
+                                    ">
                                         {userName}
                                     </p>
 
-                                    <p className="text-xs text-gray-500">
+                                    <p className="
+                                        text-xs
+                                        text-gray-500
+                                    ">
                                         Farmer
                                     </p>
 
@@ -747,12 +984,14 @@ function Navbar() {
                                         whitespace-nowrap
                                     "
                                 >
+
                                     <Icon
                                         name="logout"
                                         size={16}
                                     />
 
                                     Sign out
+
                                 </button>
 
                             </div>

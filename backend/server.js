@@ -137,6 +137,16 @@ const governmentSchemeRoutes =
 const salesRoutes =
     require("./routes/salesRoutes");
 
+const buyerRoutes =
+    require("./routes/buyerRoutes");
+
+const buyerOfferRoutes = require("./routes/buyerOfferRoutes");
+
+const farmerOfferRoutes = require("./routes/farmerOfferRoutes");
+
+const dealRoutes = require("./routes/dealRoutes");
+
+const buyerCropRoutes = require("./routes/buyerCropRoutes");
 // ============================================================
 // API ROUTES
 // ============================================================
@@ -181,6 +191,21 @@ app.use(
     salesRoutes
 );
 
+app.use(
+    "/api/buyer",
+    buyerRoutes
+);
+
+app.use(
+    "/api/buyer/crops",
+    buyerCropRoutes
+);
+
+app.use("/api/farmer/offers", farmerOfferRoutes);
+
+app.use("/api/deals", dealRoutes);
+
+app.use("/api/buyer/offers", buyerOfferRoutes);
 // ============================================================
 // PROFIT CALCULATOR
 // ============================================================

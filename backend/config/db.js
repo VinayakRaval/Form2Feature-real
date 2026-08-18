@@ -6,11 +6,13 @@ const pool = mysql.createPool({
     user: process.env.DB_USER || "root",
     password: process.env.DB_PASSWORD || "",
     database: process.env.DB_NAME || "form2feature",
+
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
 });
 
+// Test database connection
 async function testDatabase() {
     try {
         const connection = await pool.getConnection();
@@ -23,7 +25,8 @@ async function testDatabase() {
     }
 }
 
-module.exports = {
-    pool,
-    testDatabase
-};
+// Export pool directly
+module.exports = pool;
+
+// Export test function separately if you need it
+module.exports.testDatabase = testDatabase;

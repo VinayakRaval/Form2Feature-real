@@ -6,98 +6,57 @@ import {
 } from "react-router-dom";
 
 import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // ============================================================
 // PUBLIC PAGES
 // ============================================================
 
+import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 
 // ============================================================
-// PROTECTED ROUTE
-// ============================================================
-
-import ProtectedRoute from "./components/ProtectedRoute";
-
-// ============================================================
 // FARMER PAGES
 // ============================================================
 
-import FarmerDashboard
-    from "./pages/farmer/FarmerDashboard";
-
-import Profile
-    from "./pages/farmer/Profile";
-
-import Crops
-    from "./pages/farmer/Crops";
-
-import AddCrop
-    from "./pages/farmer/AddCrop";
-
-import EditCrop
-    from "./pages/farmer/EditCrop";
-
-import MandiFinder
-    from "./pages/farmer/MandiFinder";
-
-import SavedMandi
-    from "./pages/farmer/SavedMandi";
-
-import MarketPrices
-    from "./pages/farmer/MarketPrices";
-
-import Weather
-    from "./pages/farmer/Weather";
-
-import ProfitCalculator
-    from "./pages/farmer/ProfitCalculator";
-
-import SavedProfits
-    from "./pages/farmer/SavedProfits";
-
-import GovernmentSchemes
-    from "./pages/farmer/GovernmentSchemes";
-
-import Sales
-    from "./pages/farmer/Sales";
+import FarmerDashboard from "./pages/farmer/FarmerDashboard";
+import Profile from "./pages/farmer/Profile";
+import Crops from "./pages/farmer/Crops";
+import AddCrop from "./pages/farmer/AddCrop";
+import EditCrop from "./pages/farmer/EditCrop";
+import MandiFinder from "./pages/farmer/MandiFinder";
+import SavedMandi from "./pages/farmer/SavedMandi";
+import MarketPrices from "./pages/farmer/MarketPrices";
+import Weather from "./pages/farmer/Weather";
+import ProfitCalculator from "./pages/farmer/ProfitCalculator";
+import SavedProfits from "./pages/farmer/SavedProfits";
+import GovernmentSchemes from "./pages/farmer/GovernmentSchemes";
+import Sales from "./pages/farmer/Sales";
+import FarmerOffers from "./pages/farmer/FarmerOffers";
+import FarmerDeals from "./pages/farmer/FarmerDeals";
 
 // ============================================================
 // BUYER PAGES
 // ============================================================
 
-import BuyerDashboard
-    from "./pages/buyer/BuyerDashboard";
-
-import BuyerProfile
-    from "./pages/buyer/BuyerProfile";
-
-import BuyerCrops
-    from "./pages/buyer/BuyerCrops";
-
-import BuyerOffers
-    from "./pages/buyer/BuyerOffers";
-
-import BuyerDeals
-    from "./pages/buyer/BuyerDeals";
-
-import BuyerTransactions
-    from "./pages/buyer/BuyerTransactions";
+import BuyerDashboard from "./pages/buyer/BuyerDashboard";
+import BuyerProfile from "./pages/buyer/BuyerProfile";
+import BuyerCrops from "./pages/buyer/BuyerCrops";
+import BuyerOffers from "./pages/buyer/BuyerOffers";
+import BuyerDeals from "./pages/buyer/BuyerDeals";
+import BuyerTransactions from "./pages/buyer/BuyerTransactions";
+import BuyerCropDetails from "./pages/buyer/BuyerCropDetails";
 
 // ============================================================
 // APP
 // ============================================================
 
 function App() {
-
     return (
-
         <BrowserRouter>
-
             <AuthProvider>
-
                 <Routes>
 
                     {/* ==================================================
@@ -106,12 +65,7 @@ function App() {
 
                     <Route
                         path="/"
-                        element={
-                            <Navigate
-                                to="/login"
-                                replace
-                            />
-                        }
+                        element={<Home />}
                     />
 
                     <Route
@@ -129,9 +83,8 @@ function App() {
                         element={<ForgotPassword />}
                     />
 
-
                     {/* ==================================================
-                        FARMER DASHBOARD
+                        FARMER ROUTES
                     ================================================== */}
 
                     <Route
@@ -143,11 +96,6 @@ function App() {
                         }
                     />
 
-
-                    {/* ==================================================
-                        FARMER PROFILE
-                    ================================================== */}
-
                     <Route
                         path="/farmer/profile"
                         element={
@@ -156,11 +104,6 @@ function App() {
                             </ProtectedRoute>
                         }
                     />
-
-
-                    {/* ==================================================
-                        FARMER CROPS
-                    ================================================== */}
 
                     <Route
                         path="/farmer/crops"
@@ -171,11 +114,6 @@ function App() {
                         }
                     />
 
-
-                    {/* ==================================================
-                        ADD CROP
-                    ================================================== */}
-
                     <Route
                         path="/farmer/crops/add"
                         element={
@@ -184,11 +122,6 @@ function App() {
                             </ProtectedRoute>
                         }
                     />
-
-
-                    {/* ==================================================
-                        EDIT CROP
-                    ================================================== */}
 
                     <Route
                         path="/farmer/crops/edit/:id"
@@ -199,11 +132,6 @@ function App() {
                         }
                     />
 
-
-                    {/* ==================================================
-                        MANDI FINDER
-                    ================================================== */}
-
                     <Route
                         path="/farmer/mandi"
                         element={
@@ -212,11 +140,6 @@ function App() {
                             </ProtectedRoute>
                         }
                     />
-
-
-                    {/* ==================================================
-                        SAVED MANDIS
-                    ================================================== */}
 
                     <Route
                         path="/farmer/saved-mandis"
@@ -227,11 +150,6 @@ function App() {
                         }
                     />
 
-
-                    {/* ==================================================
-                        MARKET PRICES
-                    ================================================== */}
-
                     <Route
                         path="/farmer/market-prices"
                         element={
@@ -240,39 +158,6 @@ function App() {
                             </ProtectedRoute>
                         }
                     />
-
-
-                    {/* ==================================================
-                        GOVERNMENT SCHEMES
-                    ================================================== */}
-
-                    <Route
-                        path="/farmer/government-schemes"
-                        element={
-                            <ProtectedRoute role="farmer">
-                                <GovernmentSchemes />
-                            </ProtectedRoute>
-                        }
-                    />
-
-
-                    {/* ==================================================
-                        SALES & TRANSACTIONS
-                    ================================================== */}
-
-                    <Route
-                        path="/farmer/sales"
-                        element={
-                            <ProtectedRoute role="farmer">
-                                <Sales />
-                            </ProtectedRoute>
-                        }
-                    />
-
-
-                    {/* ==================================================
-                        WEATHER
-                    ================================================== */}
 
                     <Route
                         path="/farmer/weather"
@@ -283,11 +168,6 @@ function App() {
                         }
                     />
 
-
-                    {/* ==================================================
-                        PROFIT CALCULATOR
-                    ================================================== */}
-
                     <Route
                         path="/farmer/profit"
                         element={
@@ -296,11 +176,6 @@ function App() {
                             </ProtectedRoute>
                         }
                     />
-
-
-                    {/* ==================================================
-                        SAVED PROFITS
-                    ================================================== */}
 
                     <Route
                         path="/farmer/saved-profits"
@@ -311,11 +186,7 @@ function App() {
                         }
                     />
 
-
-                    {/* ==================================================
-                        OLD PROFIT HISTORY URL
-                    ================================================== */}
-
+                    {/* Old profit history URL */}
                     <Route
                         path="/farmer/profit-history"
                         element={
@@ -326,9 +197,48 @@ function App() {
                         }
                     />
 
+                    <Route
+                        path="/farmer/government-schemes"
+                        element={
+                            <ProtectedRoute role="farmer">
+                                <GovernmentSchemes />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/farmer/sales"
+                        element={
+                            <ProtectedRoute role="farmer">
+                                <Sales />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    {/* FARMER OFFERS */}
+
+                    <Route
+                        path="/farmer/offers"
+                        element={
+                            <ProtectedRoute role="farmer">
+                                <FarmerOffers />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    {/* FARMER DEALS */}
+
+                    <Route
+                        path="/farmer/deals"
+                        element={
+                            <ProtectedRoute role="farmer">
+                                <FarmerDeals />
+                            </ProtectedRoute>
+                        }
+                    />
 
                     {/* ==================================================
-                        BUYER DASHBOARD
+                        BUYER ROUTES
                     ================================================== */}
 
                     <Route
@@ -340,11 +250,6 @@ function App() {
                         }
                     />
 
-
-                    {/* ==================================================
-                        BUYER PROFILE
-                    ================================================== */}
-
                     <Route
                         path="/buyer/profile"
                         element={
@@ -354,10 +259,7 @@ function App() {
                         }
                     />
 
-
-                    {/* ==================================================
-                        BUYER BROWSE CROPS
-                    ================================================== */}
+                    {/* BUYER CROPS */}
 
                     <Route
                         path="/buyer/crops"
@@ -368,10 +270,18 @@ function App() {
                         }
                     />
 
+                    {/* BUYER CROP DETAILS */}
 
-                    {/* ==================================================
-                        BUYER OFFERS
-                    ================================================== */}
+                    <Route
+                        path="/buyer/crops/:id"
+                        element={
+                            <ProtectedRoute role="buyer">
+                                <BuyerCropDetails />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    {/* BUYER OFFERS */}
 
                     <Route
                         path="/buyer/offers"
@@ -382,10 +292,7 @@ function App() {
                         }
                     />
 
-
-                    {/* ==================================================
-                        BUYER DEALS
-                    ================================================== */}
+                    {/* BUYER DEALS */}
 
                     <Route
                         path="/buyer/deals"
@@ -396,10 +303,7 @@ function App() {
                         }
                     />
 
-
-                    {/* ==================================================
-                        BUYER TRANSACTIONS
-                    ================================================== */}
+                    {/* BUYER TRANSACTIONS */}
 
                     <Route
                         path="/buyer/transactions"
@@ -410,7 +314,6 @@ function App() {
                         }
                     />
 
-
                     {/* ==================================================
                         UNKNOWN ROUTE
                     ================================================== */}
@@ -419,16 +322,14 @@ function App() {
                         path="*"
                         element={
                             <Navigate
-                                to="/login"
+                                to="/"
                                 replace
                             />
                         }
                     />
 
                 </Routes>
-
             </AuthProvider>
-
         </BrowserRouter>
     );
 }
