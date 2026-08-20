@@ -146,6 +146,8 @@ const farmerOfferRoutes = require("./routes/farmerOfferRoutes");
 
 const dealRoutes = require("./routes/dealRoutes");
 
+const paymentRoutes = require("./routes/paymentRoutes");
+
 const buyerCropRoutes = require("./routes/buyerCropRoutes");
 // ============================================================
 // API ROUTES
@@ -227,6 +229,9 @@ app.use(
     "/api/profit-calculator",
     profitCalculatorRoutes
 );
+
+app.use("/api/payments", paymentRoutes);
+
 
 // ============================================================
 // HEALTH CHECK

@@ -48,6 +48,8 @@ import BuyerOffers from "./pages/buyer/BuyerOffers";
 import BuyerDeals from "./pages/buyer/BuyerDeals";
 import BuyerTransactions from "./pages/buyer/BuyerTransactions";
 import BuyerCropDetails from "./pages/buyer/BuyerCropDetails";
+import BuyerDealDetails from "./pages/buyer/BuyerDealDetails";
+import BuyerPayment from "./pages/buyer/BuyerPayment";
 
 // ============================================================
 // APP
@@ -326,6 +328,15 @@ function App() {
                                 replace
                             />
                         }
+                    />
+
+                    <Route
+                        path="/buyer/deals/:id"
+                        element={<BuyerDealDetails />}
+                    />
+                    <Route
+                        path="/buyer/deals/:id/payment"
+                        element={<BuyerPayment />}
                     />
 
                 </Routes>

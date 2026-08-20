@@ -967,3 +967,41 @@ LEFT JOIN deals d
     ON d.offer_id = bo.id
 WHERE bo.status = 'accepted'
 AND d.id IS NULL;
+
+CREATE TABLE IF NOT EXISTS payments (
+    id INT NOT NULL AUTO_INCREMENT,
+    deal_id INT NOT NULL,
+    buyer_id INT NOT NULL,
+    farmer_id INT NOT NULL,
+    amount DECIMAL(12,2) NOT NULL,
+    payment_method ENUM('UPI','CARD','NET_BANKING') NOT NULL,
+    transaction_id VARCHAR(100) NOT NULL UNIQUE,
+    status ENUM('pending','success','failed','refunded') NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+);
+
+USE form2feature;
+
+ALTER TABLE payments
+    MODIFY farmer_id INT NULL;
+
+ALTER TABLE payments
+    ADD COLUMN buyer_id INT NULL AFTER id;
+
+ALTER TABLE payments
+    ADD COLUMN deal_id INT NULL AFTER buyer_id;
+
+ALTER TABLE payments
+    ADD CONSTRAINT fk_payments_buyer
+        FOREIGN KEY (buyer_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE;
+
+ALTER TABLE payments
+    ADD CONSTRAINT fk_payments_deal
+        FOREIGN KEY (deal_id)
+        REFERENCES deals(id)
+        ON DELETE CASCADE;
+
