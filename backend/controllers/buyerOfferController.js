@@ -1,228 +1,148 @@
 const { pool } = require("../config/db");
 
 // ============================================================
-// HELPER
-// ============================================================
-
-function getBuyerId(req) {
-    return Number(
-        req.user?.id ||
-        req.user?.user_id ||
-        req.user?.userId
-    );
-}
-
-// ============================================================
 // CREATE BUYER OFFER
 // POST /api/buyer/offers
 // ============================================================
 
 const createBuyerOffer = async (req, res) => {
     try {
-        console.log("================================");
-        console.log("CREATE BUYER OFFER");
-        console.log("USER:", req.user);
-        console.log("BODY:", req.body);
-        console.log("================================");
-
-        // ------------------------------------------------------
-        // AUTHENTICATION
-        // ------------------------------------------------------
-
-        if (!req.user) {
-            return res.status(401).json({
-                success: false,
-                message: "Authentication required"
-            });
-        }
-
-        if (req.user.role !== "buyer") {
-            return res.status(403).json({
-                success: false,
-                message: "Buyer access required"
-            });
-        }
-
-        const buyerId = getBuyerId(req);
-
-        if (!buyerId || !Number.isInteger(buyerId)) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid buyer authentication"
-            });
-        }
-
-        // ------------------------------------------------------
-        // REQUEST DATA
-        // ------------------------------------------------------
+        const buyerId = req.user.id;
 
         const {
-            crop_id,
+            cropId,
             quantity,
-            offered_price,
+            offeredPrice,
             message
         } = req.body;
 
-        const cropId = Number(crop_id);
+        console.log("================================");
+        console.log("CREATE BUYER OFFER");
+        console.log("Buyer ID:", buyerId);
+        console.log("Crop ID:", cropId);
+        console.log("Quantity:", quantity);
+        console.log("Offered Price:", offeredPrice);
+        console.log("================================");
+
+        // ----------------------------------------------------
+        // Validate input
+        // ----------------------------------------------------
+
+        if (!cropId || !quantity || !offeredPrice) {
+            return res.status(400).json({
+                success: false,
+                message: "Crop, quantity and offer price are required"
+            });
+        }
+
         const offerQuantity = Number(quantity);
-        const offeredPrice = Number(offered_price);
+        const offerPrice = Number(offeredPrice);
 
-        // ------------------------------------------------------
-        // VALIDATION
-        // ------------------------------------------------------
-
-        if (
-            !Number.isInteger(cropId) ||
-            cropId <= 0
-        ) {
+        if (offerQuantity <= 0) {
             return res.status(400).json({
                 success: false,
-                message: "Valid crop ID is required"
+                message: "Quantity must be greater than 0"
             });
         }
 
-        if (
-            !Number.isFinite(offerQuantity) ||
-            offerQuantity <= 0
-        ) {
+        if (offerPrice <= 0) {
             return res.status(400).json({
                 success: false,
-                message: "Valid quantity is required"
+                message: "Offer price must be greater than 0"
             });
         }
 
-        if (
-            !Number.isFinite(offeredPrice) ||
-            offeredPrice <= 0
-        ) {
-            return res.status(400).json({
-                success: false,
-                message: "Valid offered price is required"
-            });
-        }
+        // ----------------------------------------------------
+        // Get crop
+        // ----------------------------------------------------
 
-        // ------------------------------------------------------
-        // GET CROP
-        // ------------------------------------------------------
-
-        const [cropRows] = await pool.execute(
+        const [crops] = await pool.query(
             `
             SELECT
                 id,
                 farmer_id,
                 crop_name,
-                crop_variety,
                 quantity,
                 quantity_unit,
                 expected_price,
                 status
             FROM crops
             WHERE id = ?
-            LIMIT 1
             `,
             [cropId]
         );
 
-        if (!cropRows || cropRows.length === 0) {
+        if (crops.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: "Crop not found"
             });
         }
 
-        const crop = cropRows[0];
+        const crop = crops[0];
 
-        // ------------------------------------------------------
-        // CHECK STATUS
-        // ------------------------------------------------------
+        // ----------------------------------------------------
+        // Crop must be available
+        // ----------------------------------------------------
 
-        if (
-            crop.status &&
-            String(crop.status).toLowerCase() !== "available"
-        ) {
+        if (crop.status !== "available") {
             return res.status(400).json({
                 success: false,
                 message: "This crop is no longer available"
             });
         }
 
-        // ------------------------------------------------------
-        // CHECK QUANTITY
-        // ------------------------------------------------------
+        // ----------------------------------------------------
+        // Buyer cannot offer on own crop
+        // ----------------------------------------------------
 
-        const availableQuantity = Number(
-            crop.quantity
-        );
-
-        if (
-            !Number.isFinite(availableQuantity) ||
-            availableQuantity <= 0
-        ) {
+        if (Number(crop.farmer_id) === Number(buyerId)) {
             return res.status(400).json({
                 success: false,
-                message: "This crop has no available quantity"
+                message: "You cannot make an offer on your own crop"
             });
         }
 
-        if (offerQuantity > availableQuantity) {
+        // ----------------------------------------------------
+        // Quantity validation
+        // ----------------------------------------------------
+
+        if (offerQuantity > Number(crop.quantity)) {
             return res.status(400).json({
                 success: false,
-                message:
-                    `Maximum available quantity is ${availableQuantity.toFixed(2)} ${crop.quantity_unit || "kg"}.`
+                message: `Maximum available quantity is ${Number(
+                    crop.quantity
+                ).toFixed(2)} ${crop.quantity_unit || "kg"}.`
             });
         }
 
-        // ------------------------------------------------------
-        // IMPORTANT
-        //
-        // farmer_id in crops is a FARMER PROFILE ID.
-        // req.user.id is a USER ID.
-        //
-        // So DO NOT compare:
-        //
-        // crop.farmer_id === buyerId
-        //
-        // because they belong to different tables.
-        // ------------------------------------------------------
+        // ----------------------------------------------------
+        // Check existing active offer
+        // ----------------------------------------------------
 
-        // ------------------------------------------------------
-        // CHECK EXISTING PENDING OFFER
-        // ------------------------------------------------------
-
-        const [existingOffers] = await pool.execute(
+        const [existingOffers] = await pool.query(
             `
-            SELECT
-                id,
-                status
+            SELECT id, quantity, status
             FROM buyer_offers
             WHERE buyer_id = ?
               AND crop_id = ?
-              AND status = 'pending'
-            LIMIT 1
+              AND status IN ('pending', 'accepted')
             `,
-            [
-                buyerId,
-                cropId
-            ]
+            [buyerId, cropId]
         );
 
-        if (
-            existingOffers &&
-            existingOffers.length > 0
-        ) {
-            return res.status(409).json({
+        if (existingOffers.length > 0) {
+            return res.status(400).json({
                 success: false,
-                message:
-                    "You already have a pending offer for this crop",
-                offer_id: existingOffers[0].id
+                message: "You already have an active offer for this crop"
             });
         }
 
-        // ------------------------------------------------------
-        // CREATE OFFER
-        // ------------------------------------------------------
+        // ----------------------------------------------------
+        // Create offer
+        // ----------------------------------------------------
 
-        const [result] = await pool.execute(
+        const [result] = await pool.query(
             `
             INSERT INTO buyer_offers
             (
@@ -238,50 +158,39 @@ const createBuyerOffer = async (req, res) => {
             [
                 buyerId,
                 cropId,
-                offeredPrice,
+                offerPrice,
                 offerQuantity,
-                message &&
-                String(message).trim()
-                    ? String(message).trim()
-                    : null
+                message || null
             ]
         );
 
-        console.log(
-            "BUYER OFFER CREATED:",
-            result.insertId
-        );
+        console.log("✅ BUYER OFFER CREATED:", result.insertId);
 
-        return res.status(201).json({
+        res.status(201).json({
             success: true,
             message: "Buyer offer created successfully",
-            offer_id: result.insertId
+            offer: {
+                id: result.insertId,
+                buyer_id: buyerId,
+                crop_id: cropId,
+                quantity: offerQuantity,
+                offered_price: offerPrice,
+                message: message || null,
+                status: "pending"
+            }
         });
 
     } catch (error) {
-        console.error(
-            "================================"
-        );
+        console.error("CREATE BUYER OFFER ERROR:", error);
 
-        console.error(
-            "CREATE BUYER OFFER ERROR:",
-            error
-        );
-
-        console.error(
-            "================================"
-        );
-
-        return res.status(500).json({
+        res.status(500).json({
             success: false,
             message: "Failed to create buyer offer",
-            error:
-                process.env.NODE_ENV === "development"
-                    ? error.message
-                    : undefined
+            error: error.message
         });
     }
 };
+
 
 // ============================================================
 // GET ALL BUYER OFFERS
@@ -290,23 +199,9 @@ const createBuyerOffer = async (req, res) => {
 
 const getBuyerOffers = async (req, res) => {
     try {
-        if (!req.user) {
-            return res.status(401).json({
-                success: false,
-                message: "Authentication required"
-            });
-        }
+        const buyerId = req.user.id;
 
-        if (req.user.role !== "buyer") {
-            return res.status(403).json({
-                success: false,
-                message: "Buyer access required"
-            });
-        }
-
-        const buyerId = getBuyerId(req);
-
-        const [rows] = await pool.execute(
+        const [offers] = await pool.query(
             `
             SELECT
                 bo.id,
@@ -323,25 +218,18 @@ const getBuyerOffers = async (req, res) => {
                 c.crop_variety,
                 c.quantity_unit,
                 c.expected_price,
-                c.image,
-                c.harvest_date,
-
-                f.id AS farmer_id,
+                c.farmer_id,
 
                 u.full_name AS farmer_name,
-                u.mobile AS farmer_mobile,
-                u.email AS farmer_email
+                u.mobile AS farmer_mobile
 
             FROM buyer_offers bo
 
             INNER JOIN crops c
                 ON bo.crop_id = c.id
 
-            LEFT JOIN farmers f
-                ON c.farmer_id = f.id
-
-            LEFT JOIN users u
-                ON f.user_id = u.id
+            INNER JOIN users u
+                ON c.farmer_id = u.id
 
             WHERE bo.buyer_id = ?
 
@@ -350,28 +238,21 @@ const getBuyerOffers = async (req, res) => {
             [buyerId]
         );
 
-        return res.status(200).json({
+        res.json({
             success: true,
-            count: rows.length,
-            offers: rows
+            offers
         });
 
     } catch (error) {
-        console.error(
-            "GET BUYER OFFERS ERROR:",
-            error
-        );
+        console.error("GET BUYER OFFERS ERROR:", error);
 
-        return res.status(500).json({
+        res.status(500).json({
             success: false,
-            message: "Server error while fetching offers",
-            error:
-                process.env.NODE_ENV === "development"
-                    ? error.message
-                    : undefined
+            message: "Failed to fetch buyer offers"
         });
     }
 };
+
 
 // ============================================================
 // GET MY BUYER OFFERS
@@ -380,28 +261,9 @@ const getBuyerOffers = async (req, res) => {
 
 const getMyBuyerOffers = async (req, res) => {
     try {
-        if (!req.user) {
-            return res.status(401).json({
-                success: false,
-                message: "Authentication required"
-            });
-        }
+        const buyerId = req.user.id;
 
-        if (req.user.role !== "buyer") {
-            return res.status(403).json({
-                success: false,
-                message: "Buyer access required"
-            });
-        }
-
-        const buyerId = getBuyerId(req);
-
-        console.log("======================================");
-        console.log("GET MY BUYER OFFERS");
-        console.log("BUYER ID:", buyerId);
-        console.log("======================================");
-
-        const [rows] = await pool.execute(
+        const [offers] = await pool.query(
             `
             SELECT
                 bo.id,
@@ -412,31 +274,20 @@ const getMyBuyerOffers = async (req, res) => {
                 bo.message,
                 bo.status,
                 bo.created_at,
-                bo.updated_at,
 
                 c.crop_name,
                 c.crop_variety,
-                c.quantity_unit,
-                c.expected_price,
-                c.image,
-                c.harvest_date,
-
-                f.id AS farmer_id,
 
                 u.full_name AS farmer_name,
-                u.mobile AS farmer_mobile,
-                u.email AS farmer_email
+                u.mobile AS farmer_mobile
 
             FROM buyer_offers bo
 
             INNER JOIN crops c
                 ON bo.crop_id = c.id
 
-            LEFT JOIN farmers f
-                ON c.farmer_id = f.id
-
-            LEFT JOIN users u
-                ON f.user_id = u.id
+            INNER JOIN users u
+                ON c.farmer_id = u.id
 
             WHERE bo.buyer_id = ?
 
@@ -445,281 +296,257 @@ const getMyBuyerOffers = async (req, res) => {
             [buyerId]
         );
 
-        console.log(
-            "MY OFFERS:",
-            rows.length
-        );
-
-        return res.status(200).json({
+        res.json({
             success: true,
-            count: rows.length,
-            offers: rows
+            offers
         });
 
     } catch (error) {
-        console.error(
-            "GET MY BUYER OFFERS ERROR:",
-            error
-        );
+        console.error("GET MY BUYER OFFERS ERROR:", error);
 
-        return res.status(500).json({
+        res.status(500).json({
             success: false,
-            message: "Server error while fetching offers",
-            error:
-                process.env.NODE_ENV === "development"
-                    ? error.message
-                    : undefined
+            message: "Failed to fetch my offers"
         });
     }
 };
 
+
 // ============================================================
-// GET SINGLE BUYER OFFER
+// GET SINGLE OFFER
 // GET /api/buyer/offers/:id
 // ============================================================
 
 const getBuyerOfferById = async (req, res) => {
     try {
-        if (!req.user) {
-            return res.status(401).json({
-                success: false,
-                message: "Authentication required"
-            });
-        }
+        const buyerId = req.user.id;
+        const offerId = req.params.id;
 
-        if (req.user.role !== "buyer") {
-            return res.status(403).json({
-                success: false,
-                message: "Buyer access required"
-            });
-        }
-
-        const buyerId = getBuyerId(req);
-        const offerId = Number(req.params.id);
-
-        if (
-            !Number.isInteger(offerId) ||
-            offerId <= 0
-        ) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid offer ID"
-            });
-        }
-
-        const [rows] = await pool.execute(
+        const [offers] = await pool.query(
             `
             SELECT
-                bo.id,
-                bo.buyer_id,
-                bo.crop_id,
-                bo.offered_price,
-                bo.quantity,
-                bo.message,
-                bo.status,
-                bo.created_at,
-                bo.updated_at,
-
+                bo.*,
                 c.crop_name,
                 c.crop_variety,
-                c.quantity AS crop_quantity,
                 c.quantity_unit,
-                c.expected_price,
-                c.quality,
-                c.description,
-                c.image,
-                c.harvest_date,
-
-                f.id AS farmer_id,
-
+                c.farmer_id,
                 u.full_name AS farmer_name,
-                u.mobile AS farmer_mobile,
-                u.email AS farmer_email
-
+                u.mobile AS farmer_mobile
             FROM buyer_offers bo
-
             INNER JOIN crops c
                 ON bo.crop_id = c.id
-
-            LEFT JOIN farmers f
-                ON c.farmer_id = f.id
-
-            LEFT JOIN users u
-                ON f.user_id = u.id
-
+            INNER JOIN users u
+                ON c.farmer_id = u.id
             WHERE bo.id = ?
               AND bo.buyer_id = ?
-
-            LIMIT 1
             `,
-            [
-                offerId,
-                buyerId
-            ]
+            [offerId, buyerId]
         );
 
-        if (!rows || rows.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Buyer offer not found"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            offer: rows[0]
-        });
-
-    } catch (error) {
-        console.error(
-            "GET BUYER OFFER BY ID ERROR:",
-            error
-        );
-
-        return res.status(500).json({
-            success: false,
-            message: "Server error while fetching offer",
-            error:
-                process.env.NODE_ENV === "development"
-                    ? error.message
-                    : undefined
-        });
-    }
-};
-
-// ============================================================
-// UPDATE BUYER OFFER STATUS
-// PATCH /api/buyer/offers/:id/status
-// ============================================================
-
-const updateBuyerOfferStatus = async (req, res) => {
-    try {
-        if (!req.user) {
-            return res.status(401).json({
-                success: false,
-                message: "Authentication required"
-            });
-        }
-
-        if (req.user.role !== "buyer") {
-            return res.status(403).json({
-                success: false,
-                message: "Buyer access required"
-            });
-        }
-
-        const buyerId = getBuyerId(req);
-        const offerId = Number(req.params.id);
-
-        const status = String(
-            req.body?.status || ""
-        )
-            .trim()
-            .toLowerCase();
-
-        if (
-            !Number.isInteger(offerId) ||
-            offerId <= 0
-        ) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid offer ID"
-            });
-        }
-
-        const allowedStatuses = [
-            "pending",
-            "accepted",
-            "rejected",
-            "cancelled"
-        ];
-
-        if (!allowedStatuses.includes(status)) {
-            return res.status(400).json({
-                success: false,
-                message:
-                    "Invalid status. Allowed values: pending, accepted, rejected, cancelled"
-            });
-        }
-
-        const [result] = await pool.execute(
-            `
-            UPDATE buyer_offers
-            SET status = ?
-            WHERE id = ?
-              AND buyer_id = ?
-            `,
-            [
-                status,
-                offerId,
-                buyerId
-            ]
-        );
-
-        if (result.affectedRows === 0) {
+        if (offers.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: "Offer not found"
             });
         }
 
-        return res.status(200).json({
+        res.json({
             success: true,
-            message: "Offer status updated successfully"
+            offer: offers[0]
         });
 
     } catch (error) {
-        console.error(
-            "UPDATE BUYER OFFER STATUS ERROR:",
-            error
-        );
+        console.error("GET BUYER OFFER ERROR:", error);
 
-        return res.status(500).json({
+        res.status(500).json({
             success: false,
-            message: "Server error while updating offer status",
-            error:
-                process.env.NODE_ENV === "development"
-                    ? error.message
-                    : undefined
+            message: "Failed to fetch offer"
         });
     }
 };
 
+
 // ============================================================
-// CANCEL BUYER OFFER
+// UPDATE OFFER STATUS
+// PATCH /api/buyer/offers/:id/status
+// ============================================================
+
+const updateBuyerOfferStatus = async (req, res) => {
+    const connection = await pool.getConnection();
+
+    try {
+        const offerId = req.params.id;
+        const { status } = req.body;
+
+        if (!["pending", "accepted", "rejected"].includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid offer status"
+            });
+        }
+
+        await connection.beginTransaction();
+
+        // ----------------------------------------------------
+        // Get offer + crop
+        // ----------------------------------------------------
+
+        const [offers] = await connection.query(
+            `
+            SELECT
+                bo.*,
+                c.farmer_id,
+                c.quantity AS crop_quantity,
+                c.status AS crop_status
+            FROM buyer_offers bo
+            INNER JOIN crops c
+                ON bo.crop_id = c.id
+            WHERE bo.id = ?
+            FOR UPDATE
+            `,
+            [offerId]
+        );
+
+        if (offers.length === 0) {
+            await connection.rollback();
+
+            return res.status(404).json({
+                success: false,
+                message: "Offer not found"
+            });
+        }
+
+        const offer = offers[0];
+
+        // ----------------------------------------------------
+        // If farmer accepts
+        // ----------------------------------------------------
+
+        if (status === "accepted") {
+
+            if (Number(offer.quantity) > Number(offer.crop_quantity)) {
+                await connection.rollback();
+
+                return res.status(400).json({
+                    success: false,
+                    message: "Offer quantity is greater than available crop quantity"
+                });
+            }
+
+            // Accept offer
+            await connection.query(
+                `
+                UPDATE buyer_offers
+                SET status = 'accepted'
+                WHERE id = ?
+                `,
+                [offerId]
+            );
+
+            // Reject other pending offers for same crop
+            await connection.query(
+                `
+                UPDATE buyer_offers
+                SET status = 'rejected'
+                WHERE crop_id = ?
+                  AND id != ?
+                  AND status = 'pending'
+                `,
+                [offer.crop_id, offerId]
+            );
+
+            // ------------------------------------------------
+            // CREATE DEAL automatically
+            // ------------------------------------------------
+
+            const [existingDeals] = await connection.query(
+                `
+                SELECT id
+                FROM deals
+                WHERE offer_id = ?
+                `,
+                [offerId]
+            );
+
+            if (existingDeals.length === 0) {
+
+                await connection.query(
+                    `
+                    INSERT INTO deals
+                    (
+                        offer_id,
+                        buyer_id,
+                        farmer_id,
+                        crop_id,
+                        quantity,
+                        agreed_price,
+                        message,
+                        status
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'accepted')
+                    `,
+                    [
+                        offer.id,
+                        offer.buyer_id,
+                        offer.farmer_id,
+                        offer.crop_id,
+                        offer.quantity,
+                        offer.offered_price,
+                        offer.message || null
+                    ]
+                );
+
+                console.log(
+                    `✅ Deal created automatically for offer ${offerId}`
+                );
+            }
+        } else {
+
+            await connection.query(
+                `
+                UPDATE buyer_offers
+                SET status = ?
+                WHERE id = ?
+                `,
+                [status, offerId]
+            );
+        }
+
+        await connection.commit();
+
+        res.json({
+            success: true,
+            message: `Offer ${status} successfully`
+        });
+
+    } catch (error) {
+        await connection.rollback();
+
+        console.error("UPDATE BUYER OFFER STATUS ERROR:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to update offer status",
+            error: error.message
+        });
+
+    } finally {
+        connection.release();
+    }
+};
+
+
+// ============================================================
+// CANCEL OFFER
 // PATCH /api/buyer/offers/:id/cancel
 // ============================================================
 
 const cancelBuyerOffer = async (req, res) => {
     try {
-        if (!req.user) {
-            return res.status(401).json({
-                success: false,
-                message: "Authentication required"
-            });
-        }
+        const buyerId = req.user.id;
+        const offerId = req.params.id;
 
-        if (req.user.role !== "buyer") {
-            return res.status(403).json({
-                success: false,
-                message: "Buyer access required"
-            });
-        }
-
-        const buyerId = getBuyerId(req);
-        const offerId = Number(req.params.id);
-
-        if (
-            !Number.isInteger(offerId) ||
-            offerId <= 0
-        ) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid offer ID"
-            });
-        }
-
-        const [result] = await pool.execute(
+        const [result] = await pool.query(
             `
             UPDATE buyer_offers
             SET status = 'cancelled'
@@ -727,41 +554,31 @@ const cancelBuyerOffer = async (req, res) => {
               AND buyer_id = ?
               AND status = 'pending'
             `,
-            [
-                offerId,
-                buyerId
-            ]
+            [offerId, buyerId]
         );
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({
+            return res.status(400).json({
                 success: false,
-                message:
-                    "Offer not found or cannot be cancelled"
+                message: "Offer cannot be cancelled"
             });
         }
 
-        return res.status(200).json({
+        res.json({
             success: true,
             message: "Offer cancelled successfully"
         });
 
     } catch (error) {
-        console.error(
-            "CANCEL BUYER OFFER ERROR:",
-            error
-        );
+        console.error("CANCEL BUYER OFFER ERROR:", error);
 
-        return res.status(500).json({
+        res.status(500).json({
             success: false,
-            message: "Server error while cancelling offer",
-            error:
-                process.env.NODE_ENV === "development"
-                    ? error.message
-                    : undefined
+            message: "Failed to cancel offer"
         });
     }
 };
+
 
 // ============================================================
 // EXPORTS

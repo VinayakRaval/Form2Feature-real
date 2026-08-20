@@ -911,3 +911,59 @@ ALTER TABLE deals
 MODIFY updated_at TIMESTAMP
 DEFAULT CURRENT_TIMESTAMP
 ON UPDATE CURRENT_TIMESTAMP;
+
+INSERT INTO deals
+(
+    offer_id,
+    buyer_id,
+    farmer_id,
+    crop_id,
+    quantity,
+    agreed_price,
+    message,
+    status
+)
+SELECT
+    bo.id,
+    bo.buyer_id,
+    c.farmer_id,
+    bo.crop_id,
+    bo.quantity,
+    bo.offered_price,
+    bo.message,
+    'accepted'
+FROM buyer_offers bo
+INNER JOIN crops c
+    ON bo.crop_id = c.id
+LEFT JOIN deals d
+    ON d.offer_id = bo.id
+WHERE bo.status = 'accepted'
+  AND d.id IS NULL;
+
+INSERT INTO deals
+(
+    offer_id,
+    buyer_id,
+    farmer_id,
+    crop_id,
+    quantity,
+    agreed_price,
+    message,
+    status
+)
+SELECT
+    bo.id,
+    bo.buyer_id,
+    c.farmer_id,
+    bo.crop_id,
+    bo.quantity,
+    bo.offered_price,
+    bo.message,
+    'accepted'
+FROM buyer_offers bo
+INNER JOIN crops c
+    ON bo.crop_id = c.id
+LEFT JOIN deals d
+    ON d.offer_id = bo.id
+WHERE bo.status = 'accepted'
+AND d.id IS NULL;

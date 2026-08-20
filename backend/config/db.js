@@ -11,39 +11,22 @@ const pool = mysql.createPool({
     queueLimit: 0
 });
 
-
 const testDatabase = async () => {
-
     try {
+        const connection = await pool.getConnection();
 
-        const connection =
-            await pool.getConnection();
+        console.log("✅ MySQL Database Connected");
 
-        console.log(
-            "✅ MySQL Database Connected"
-        );
-
-        await connection.query(
-            "SELECT 1"
-        );
+        await connection.query("SELECT 1");
 
         connection.release();
 
-        console.log(
-            "✅ Database test completed"
-        );
+        console.log("✅ Database test completed");
 
     } catch (error) {
-
-        console.error(
-            "❌ Database test failed:",
-            error.message
-        );
-
+        console.error("❌ Database test failed:", error);
     }
-
 };
-
 
 module.exports = {
     pool,

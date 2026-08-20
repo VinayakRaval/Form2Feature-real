@@ -11,49 +11,48 @@ const {
     cancelBuyerOffer
 } = require("../controllers/buyerOfferController");
 
-const authMiddleware =
-    require("../middleware/authMiddleware");
+const authMiddleware = require("../middleware/authMiddleware");
 
 // ============================================================
 // BUYER OFFERS
 // ============================================================
 
-// POST /api/buyer/offers
+// Create offer
 router.post(
     "/",
     authMiddleware,
     createBuyerOffer
 );
 
-// GET /api/buyer/offers
+// Get all offers
 router.get(
     "/",
     authMiddleware,
     getBuyerOffers
 );
 
-// GET /api/buyer/offers/my
+// Get my offers
 router.get(
     "/my",
     authMiddleware,
     getMyBuyerOffers
 );
 
-// GET /api/buyer/offers/:id
+// Get single offer
 router.get(
     "/:id",
     authMiddleware,
     getBuyerOfferById
 );
 
-// PATCH /api/buyer/offers/:id/status
+// Update offer status
 router.patch(
     "/:id/status",
     authMiddleware,
     updateBuyerOfferStatus
 );
 
-// PATCH /api/buyer/offers/:id/cancel
+// Cancel offer
 router.patch(
     "/:id/cancel",
     authMiddleware,

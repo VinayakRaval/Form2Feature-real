@@ -1,4 +1,4 @@
-const db = require("../config/db");
+const { pool } = require("../config/db");
 
 // ============================================================
 // CREATE DEAL
@@ -6,84 +6,112 @@ const db = require("../config/db");
 // ============================================================
 
 const createDeal = async (req, res) => {
-  try {
-    const buyerId = Number(req.user.id);
+    try {
+        const userId = req.user.id;
 
-    const {
-      offer_id,
-      crop_id,
-      farmer_id,
-      quantity,
-      agreed_price,
-      message,
-    } = req.body;
+        const {
+            offerId,
+            buyerId,
+            farmerId,
+            cropId,
+            quantity,
+            agreedPrice,
+            message
+        } = req.body;
 
-    if (!offer_id || !crop_id || !farmer_id) {
-      return res.status(400).json({
-        success: false,
-        message: "offer_id, crop_id and farmer_id are required",
-      });
+        if (!offerId) {
+            return res.status(400).json({
+                success: false,
+                message: "Offer ID is required"
+            });
+        }
+
+        const [offers] = await pool.query(
+            `
+            SELECT *
+            FROM buyer_offers
+            WHERE id = ?
+            `,
+            [offerId]
+        );
+
+        if (offers.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Offer not found"
+            });
+        }
+
+        const offer = offers[0];
+
+        if (offer.status !== "accepted") {
+            return res.status(400).json({
+                success: false,
+                message: "Only accepted offers can become deals"
+            });
+        }
+
+        // Prevent duplicate deal
+        const [existing] = await pool.query(
+            `
+            SELECT id
+            FROM deals
+            WHERE offer_id = ?
+            `,
+            [offerId]
+        );
+
+        if (existing.length > 0) {
+            return res.status(409).json({
+                success: false,
+                message: "Deal already exists",
+                dealId: existing[0].id
+            });
+        }
+
+        const [result] = await pool.query(
+            `
+            INSERT INTO deals
+            (
+                offer_id,
+                buyer_id,
+                farmer_id,
+                crop_id,
+                quantity,
+                agreed_price,
+                message,
+                status
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'accepted')
+            `,
+            [
+                offer.id,
+                offer.buyer_id,
+                farmerId || null,
+                offer.crop_id,
+                offer.quantity,
+                offer.offered_price,
+                offer.message || null
+            ]
+        );
+
+        res.status(201).json({
+            success: true,
+            message: "Deal created successfully",
+            dealId: result.insertId
+        });
+
+    } catch (error) {
+        console.error("CREATE DEAL ERROR:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to create deal",
+            error: error.message
+        });
     }
-
-    // Check duplicate deal
-    const [existingDeals] = await db.query(
-      `
-      SELECT id
-      FROM deals
-      WHERE offer_id = ?
-      LIMIT 1
-      `,
-      [offer_id]
-    );
-
-    if (existingDeals.length > 0) {
-      return res.status(409).json({
-        success: false,
-        message: "Deal already exists for this offer",
-        deal_id: existingDeals[0].id,
-      });
-    }
-
-    const [result] = await db.query(
-      `
-      INSERT INTO deals
-      (
-        offer_id,
-        buyer_id,
-        farmer_id,
-        crop_id,
-        quantity,
-        agreed_price,
-        status
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-      `,
-      [
-        offer_id,
-        buyerId,
-        farmer_id,
-        crop_id,
-        quantity || 0,
-        agreed_price || 0,
-        "accepted",
-      ]
-    );
-
-    return res.status(201).json({
-      success: true,
-      message: "Deal created successfully",
-      deal_id: result.insertId,
-    });
-  } catch (error) {
-    console.error("CREATE DEAL ERROR:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to create deal",
-      error: error.message,
-    });
-  }
 };
+
 
 // ============================================================
 // GET BUYER DEALS
@@ -91,90 +119,78 @@ const createDeal = async (req, res) => {
 // ============================================================
 
 const getBuyerDeals = async (req, res) => {
-  try {
-    const buyerId = Number(req.user.id);
+    try {
+        const buyerId = req.user.id;
 
-    console.log("=================================");
-    console.log("GET BUYER DEALS");
-    console.log("BUYER ID:", buyerId);
-    console.log("=================================");
+        console.log("================================");
+        console.log("GET BUYER DEALS");
+        console.log("Buyer ID:", buyerId);
+        console.log("================================");
 
-    const [rows] = await db.query(
-      `
-      SELECT
-        d.id,
-        d.offer_id,
-        d.buyer_id,
-        d.farmer_id,
-        d.crop_id,
-        d.quantity,
-        d.agreed_price,
-        d.status,
-        d.created_at,
-        d.updated_at,
+        const [deals] = await pool.query(
+            `
+            SELECT
+                d.id,
+                d.offer_id,
+                d.buyer_id,
+                d.farmer_id,
+                d.crop_id,
+                d.quantity,
+                d.agreed_price,
+                d.message,
+                d.status,
+                d.created_at,
+                d.updated_at,
 
-        c.crop_name,
-        c.crop_variety,
-        c.quantity_unit,
+                c.crop_name,
+                c.crop_variety,
+                c.quantity_unit,
+                c.quality,
+                c.expected_price,
+                c.harvest_date,
+                c.image,
 
-        COALESCE(
-          NULLIF(
-            CONCAT(
-              COALESCE(fp.first_name, ''),
-              ' ',
-              COALESCE(fp.last_name, '')
-            ),
-            ' '
-          ),
-          NULLIF(
-            CONCAT(
-              COALESCE(u.first_name, ''),
-              ' ',
-              COALESCE(u.last_name, '')
-            ),
-            ' '
-          ),
-          u.name,
-          'Farmer'
-        ) AS farmer_name
+                farmer.full_name AS farmer_name,
+                farmer.mobile AS farmer_mobile,
 
-      FROM deals d
+                buyer.full_name AS buyer_name
 
-      LEFT JOIN crops c
-        ON c.id = d.crop_id
+            FROM deals d
 
-      LEFT JOIN users u
-        ON u.id = d.farmer_id
+            INNER JOIN crops c
+                ON d.crop_id = c.id
 
-      LEFT JOIN farmer_profiles fp
-        ON fp.user_id = d.farmer_id
+            INNER JOIN users farmer
+                ON d.farmer_id = farmer.id
 
-      WHERE d.buyer_id = ?
+            INNER JOIN users buyer
+                ON d.buyer_id = buyer.id
 
-      ORDER BY d.created_at DESC
-      `,
-      [buyerId]
-    );
+            WHERE d.buyer_id = ?
 
-    console.log("BUYER DEALS FOUND:", rows.length);
+            ORDER BY d.created_at DESC
+            `,
+            [buyerId]
+        );
 
-    return res.status(200).json({
-      success: true,
-      deals: rows,
-    });
-  } catch (error) {
-    console.error("=================================");
-    console.error("GET BUYER DEALS ERROR");
-    console.error(error);
-    console.error("=================================");
+        console.log("Buyer deals found:", deals.length);
 
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch buyer deals",
-      error: error.message,
-    });
-  }
+        res.json({
+            success: true,
+            deals
+        });
+
+    } catch (error) {
+        console.error("GET BUYER DEALS ERROR:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch buyer deals",
+            error: error.message
+        });
+    }
 };
+
 
 // ============================================================
 // GET FARMER DEALS
@@ -182,87 +198,60 @@ const getBuyerDeals = async (req, res) => {
 // ============================================================
 
 const getFarmerDeals = async (req, res) => {
-  try {
-    const farmerId = Number(req.user.id);
+    try {
+        const farmerId = req.user.id;
 
-    console.log("=================================");
-    console.log("GET FARMER DEALS");
-    console.log("FARMER ID:", farmerId);
-    console.log("=================================");
+        const [deals] = await pool.query(
+            `
+            SELECT
+                d.*,
+                c.crop_name,
+                c.crop_variety,
+                c.quantity_unit,
+                c.quality,
+                c.expected_price,
+                c.harvest_date,
+                c.image,
 
-    const [rows] = await db.query(
-      `
-      SELECT
-        d.id,
-        d.offer_id,
-        d.buyer_id,
-        d.farmer_id,
-        d.crop_id,
-        d.quantity,
-        d.agreed_price,
-        d.status,
-        d.created_at,
-        d.updated_at,
+                buyer.full_name AS buyer_name,
+                buyer.mobile AS buyer_mobile,
 
-        c.crop_name,
-        c.crop_variety,
-        c.quantity_unit,
+                farmer.full_name AS farmer_name
 
-        COALESCE(
-          NULLIF(
-            CONCAT(
-              COALESCE(bp.first_name, ''),
-              ' ',
-              COALESCE(bp.last_name, '')
-            ),
-            ' '
-          ),
-          NULLIF(
-            CONCAT(
-              COALESCE(u.first_name, ''),
-              ' ',
-              COALESCE(u.last_name, '')
-            ),
-            ' '
-          ),
-          u.name,
-          'Buyer'
-        ) AS buyer_name
+            FROM deals d
 
-      FROM deals d
+            INNER JOIN crops c
+                ON d.crop_id = c.id
 
-      LEFT JOIN crops c
-        ON c.id = d.crop_id
+            INNER JOIN users buyer
+                ON d.buyer_id = buyer.id
 
-      LEFT JOIN users u
-        ON u.id = d.buyer_id
+            INNER JOIN users farmer
+                ON d.farmer_id = farmer.id
 
-      LEFT JOIN buyer_profiles bp
-        ON bp.user_id = d.buyer_id
+            WHERE d.farmer_id = ?
 
-      WHERE d.farmer_id = ?
+            ORDER BY d.created_at DESC
+            `,
+            [farmerId]
+        );
 
-      ORDER BY d.created_at DESC
-      `,
-      [farmerId]
-    );
+        res.json({
+            success: true,
+            deals
+        });
 
-    console.log("FARMER DEALS FOUND:", rows.length);
+    } catch (error) {
+        console.error("GET FARMER DEALS ERROR:", error);
 
-    return res.status(200).json({
-      success: true,
-      deals: rows,
-    });
-  } catch (error) {
-    console.error("GET FARMER DEALS ERROR:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch farmer deals",
-      error: error.message,
-    });
-  }
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch farmer deals",
+            error: error.message
+        });
+    }
 };
+
 
 // ============================================================
 // GET SINGLE DEAL
@@ -270,119 +259,72 @@ const getFarmerDeals = async (req, res) => {
 // ============================================================
 
 const getDealById = async (req, res) => {
-  try {
-    const dealId = Number(req.params.id);
-    const userId = Number(req.user.id);
-    const role = req.user.role;
+    try {
+        const userId = req.user.id;
+        const dealId = req.params.id;
 
-    const [rows] = await db.query(
-      `
-      SELECT
-        d.*,
+        const [deals] = await pool.query(
+            `
+            SELECT
+                d.*,
 
-        c.crop_name,
-        c.crop_variety,
-        c.quantity_unit,
+                c.crop_name,
+                c.crop_variety,
+                c.quantity_unit,
+                c.quality,
+                c.expected_price,
+                c.harvest_date,
+                c.image,
 
-        COALESCE(
-          NULLIF(
-            CONCAT(
-              COALESCE(bp.first_name, ''),
-              ' ',
-              COALESCE(bp.last_name, '')
-            ),
-            ' '
-          ),
-          NULLIF(
-            CONCAT(
-              COALESCE(u.first_name, ''),
-              ' ',
-              COALESCE(u.last_name, '')
-            ),
-            ' '
-          ),
-          u.name,
-          'Buyer'
-        ) AS buyer_name,
+                buyer.full_name AS buyer_name,
+                buyer.mobile AS buyer_mobile,
 
-        COALESCE(
-          NULLIF(
-            CONCAT(
-              COALESCE(fp.first_name, ''),
-              ' ',
-              COALESCE(fp.last_name, '')
-            ),
-            ' '
-          ),
-          NULLIF(
-            CONCAT(
-              COALESCE(fu.first_name, ''),
-              ' ',
-              COALESCE(fu.last_name, '')
-            ),
-            ' '
-          ),
-          fu.name,
-          'Farmer'
-        ) AS farmer_name
+                farmer.full_name AS farmer_name,
+                farmer.mobile AS farmer_mobile
 
-      FROM deals d
+            FROM deals d
 
-      LEFT JOIN crops c
-        ON c.id = d.crop_id
+            INNER JOIN crops c
+                ON d.crop_id = c.id
 
-      LEFT JOIN users u
-        ON u.id = d.buyer_id
+            INNER JOIN users buyer
+                ON d.buyer_id = buyer.id
 
-      LEFT JOIN buyer_profiles bp
-        ON bp.user_id = d.buyer_id
+            INNER JOIN users farmer
+                ON d.farmer_id = farmer.id
 
-      LEFT JOIN users fu
-        ON fu.id = d.farmer_id
+            WHERE d.id = ?
+              AND (
+                    d.buyer_id = ?
+                    OR d.farmer_id = ?
+              )
+            `,
+            [dealId, userId, userId]
+        );
 
-      LEFT JOIN farmer_profiles fp
-        ON fp.user_id = d.farmer_id
+        if (deals.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Deal not found"
+            });
+        }
 
-      WHERE d.id = ?
+        res.json({
+            success: true,
+            deal: deals[0]
+        });
 
-      LIMIT 1
-      `,
-      [dealId]
-    );
+    } catch (error) {
+        console.error("GET DEAL ERROR:", error);
 
-    if (rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Deal not found",
-      });
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch deal",
+            error: error.message
+        });
     }
-
-    const deal = rows[0];
-
-    if (
-      (role === "buyer" && Number(deal.buyer_id) !== userId) ||
-      (role === "farmer" && Number(deal.farmer_id) !== userId)
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: "You are not allowed to view this deal",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      deal,
-    });
-  } catch (error) {
-    console.error("GET DEAL ERROR:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch deal",
-      error: error.message,
-    });
-  }
 };
+
 
 // ============================================================
 // UPDATE DEAL STATUS
@@ -390,88 +332,76 @@ const getDealById = async (req, res) => {
 // ============================================================
 
 const updateDealStatus = async (req, res) => {
-  try {
-    const dealId = Number(req.params.id);
-    const userId = Number(req.user.id);
-    const { status } = req.body;
+    try {
+        const userId = req.user.id;
+        const dealId = req.params.id;
+        const { status } = req.body;
 
-    const allowedStatuses = [
-      "accepted",
-      "payment_pending",
-      "paid",
-      "completed",
-      "cancelled",
-    ];
+        const allowedStatuses = [
+            "accepted",
+            "payment_pending",
+            "paid",
+            "completed",
+            "cancelled"
+        ];
 
-    if (!status || !allowedStatuses.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Invalid status. Allowed values: accepted, payment_pending, paid, completed, cancelled",
-      });
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid deal status"
+            });
+        }
+
+        const [deals] = await pool.query(
+            `
+            SELECT *
+            FROM deals
+            WHERE id = ?
+              AND (
+                    buyer_id = ?
+                    OR farmer_id = ?
+              )
+            `,
+            [dealId, userId, userId]
+        );
+
+        if (deals.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Deal not found"
+            });
+        }
+
+        await pool.query(
+            `
+            UPDATE deals
+            SET status = ?
+            WHERE id = ?
+            `,
+            [status, dealId]
+        );
+
+        res.json({
+            success: true,
+            message: "Deal status updated successfully"
+        });
+
+    } catch (error) {
+        console.error("UPDATE DEAL STATUS ERROR:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to update deal status",
+            error: error.message
+        });
     }
-
-    const [deals] = await db.query(
-      `
-      SELECT *
-      FROM deals
-      WHERE id = ?
-      LIMIT 1
-      `,
-      [dealId]
-    );
-
-    if (deals.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Deal not found",
-      });
-    }
-
-    const deal = deals[0];
-
-    if (
-      Number(deal.buyer_id) !== userId &&
-      Number(deal.farmer_id) !== userId
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: "You are not allowed to update this deal",
-      });
-    }
-
-    await db.query(
-      `
-      UPDATE deals
-      SET status = ?
-      WHERE id = ?
-      `,
-      [status, dealId]
-    );
-
-    return res.status(200).json({
-      success: true,
-      message: "Deal status updated successfully",
-    });
-  } catch (error) {
-    console.error("UPDATE DEAL STATUS ERROR:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to update deal status",
-      error: error.message,
-    });
-  }
 };
 
-// ============================================================
-// EXPORTS
-// ============================================================
 
 module.exports = {
-  createDeal,
-  getBuyerDeals,
-  getFarmerDeals,
-  getDealById,
-  updateDealStatus,
+    createDeal,
+    getBuyerDeals,
+    getFarmerDeals,
+    getDealById,
+    updateDealStatus
 };
